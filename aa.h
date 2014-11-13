@@ -63,18 +63,15 @@ typedef struct {
 
 
 
-#define DLLEXP extern "C" __declspec(dllexport)
+bool aa_init_font_default(AaFontId id, const char* subset, AaFont* res);
+bool aa_init_font_from_picture(const char* font_picture_path, const char* font_carmap, const char* subset, AaFont* res);
 
+bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines=DEFAULT_LINES, int working_height=DEFAULT_WORKING_HEIGHT, int translation=DEFAULT_TRANSLATION, float penalty=DEFAULT_PENALTY, AaPaletteId palette_id=DEFAULT_PALETTEID, float canny_sigma=DEFAULT_CANNY_SIGMA, int canny_min=DEFAULT_CANNY_HYS_MIN, int canny_max=DEFAULT_CANNY_HYS_MAX, int blur_pass=DEFAULT_BLUR_PASS);
 
-DLLEXP bool aa_init_font_default(AaFontId id, const char* subset, AaFont* res);
-DLLEXP bool aa_init_font_from_picture(const char* font_picture_path, const char* font_carmap, const char* subset, AaFont* res);
-
-DLLEXP bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines=DEFAULT_LINES, int working_height=DEFAULT_WORKING_HEIGHT, int translation=DEFAULT_TRANSLATION, float penalty=DEFAULT_PENALTY, AaPaletteId palette_id=DEFAULT_PALETTEID, float canny_sigma=DEFAULT_CANNY_SIGMA, int canny_min=DEFAULT_CANNY_HYS_MIN, int canny_max=DEFAULT_CANNY_HYS_MAX, int blur_pass=DEFAULT_BLUR_PASS);
-
-DLLEXP FIMULTIBITMAP* aa_load_animated_file(const char* path);
-DLLEXP FIBITMAP* aa_load_file(const char* path);
-DLLEXP FIBITMAP* aa_load_memory(BYTE* data, unsigned int size);
-DLLEXP bool aa_unload(AaImage* image);
+FIMULTIBITMAP* aa_load_animated_file(const char* path);
+FIBITMAP* aa_load_file(const char* path);
+FIBITMAP* aa_load_memory(BYTE* data, unsigned int size);
+bool aa_unload(AaImage* image);
 
 bool aa_output_ascii(AaImage* image, FILE* out);
 bool aa_output_ansi16(AaImage* image, FILE* out);
