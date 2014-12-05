@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
         //aa_output_ascii(&aaimage, stdout);
         aa_convert(image, AA_ALG_PIXEL_11, &font, &aaimage, size, 1024*1.5, 2, 0.4, AA_PAL_FREE_64,DEFAULT_CANNY_SIGMA,DEFAULT_CANNY_HYS_MIN,DEFAULT_CANNY_HYS_MAX,DEFAULT_BLUR_PASS);
         aa_output_ascii(&aaimage, stdout);
-        aa_convert(image, AA_ALG_VECTOR_DST, &font, &aaimage, size, 1024*1.5, 2, 0.4, AA_PAL_FREE_64,DEFAULT_CANNY_SIGMA,DEFAULT_CANNY_HYS_MIN,DEFAULT_CANNY_HYS_MAX,DEFAULT_BLUR_PASS);
+        aa_convert(image, AA_ALG_VECTOR_DST, &font, &aaimage, size, 1024*1.5, 2, 0.4, AA_PAL_FREE_64,0.2,25,45,1);
         aa_output_ascii(&aaimage, stdout);
         aa_unload(&aaimage);
     }

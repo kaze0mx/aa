@@ -335,8 +335,8 @@ FIBITMAP* canny_edge_detection2(FIBITMAP* source, float sigma, int MinHysteresis
     //Sobel Masks
     float SobelX[] = {1,0,-1,  1,0,-1,  1,0,-1};
     float SobelY[] = {1,1,1,  0,0,0,  -1,-1,-1};
-    BYTE* DerivativeX = new BYTE[pitch*height];
-    BYTE* DerivativeY = new BYTE[pitch*height];
+    BYTE* DerivativeX = new BYTE[surface];
+    BYTE* DerivativeY = new BYTE[surface];
     convolution(buffer, DerivativeX, SobelX, width, height, pitch, 3, false, -1, -1);
     convolution(buffer, DerivativeY, SobelY, width, height, pitch, 3, false, -1, -1);
 #ifdef DEBUG

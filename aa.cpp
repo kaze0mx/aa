@@ -353,7 +353,7 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 #endif
 	//resize working
 	FIBITMAP* final=NULL;
-	if(working_height) {
+	if(working_height && working_height < real_height) {
 		int height=working_height;
 		float percent=(height/float(real_height));
 		int width=int(real_width*percent);
