@@ -9,8 +9,6 @@
 #define PALETTE_MAX_SIZE 256
 
 
-#define DEBUG
-
 BYTE font_consola[] = "" 
 #include "consola.h"
 ;
@@ -352,7 +350,9 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 	int real_width = FreeImage_GetWidth(image);
 	int real_height = FreeImage_GetHeight(image);
 #ifdef DEBUG
+    printf("Starting\n");
 	GenericWriter(image, "original.png", 0);
+    printf("Starting2\n");
 #endif
 	//resize working
 	FIBITMAP* final = NULL;

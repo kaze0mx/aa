@@ -3,8 +3,6 @@
 #include <float.h>
 #include "transform.h"
 
-#define DEBUG
-
 typedef BYTE pixel_t;
 
 
@@ -350,10 +348,18 @@ FIBITMAP* canny_edge_detection2(FIBITMAP* source, float sigma, int MinHysteresis
 
     float* NonMax = new float[surface];
     //Compute the gradient magnitude based on derivatives in x and y:
-	for(int i = 0;i<surface;i++) {
-		float a = (float)sqrt((((float)DerivativeX1[i]) * DerivativeX1[i]) + (((float)DerivativeY1[i]) * DerivativeY1[i]));
-		float b = (float)sqrt((((float)DerivativeX2[i]) * DerivativeX2[i]) + (((float)DerivativeY2[i]) * DerivativeY2[i]));
-        NonMax[i] = a>b?a:b;
+	for (i = 0; i <  width; i++) {
+        for (j = 0; j < height; j++) {
+            int ind = j*pitch+i;
+            if ( i > limit && i < width - limit && j > limit && j < height - limit) {
+                float a = (float)sqrt((((float)DerivativeX1[ind]) * DerivativeX1[ind]) + (((float)DerivativeY1[ind]) * DerivativeY1[ind]));
+                float b = (float)sqrt((((float)DerivativeX2[ind]) * DerivativeX2[ind]) + (((float)DerivativeY2[ind]) * DerivativeY2[ind]));
+                NonMax[ind] = a>b?a:b;
+            }
+            else {
+                NonMax[ind] = 0;
+            }
+        }
     }
  
     
