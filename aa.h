@@ -12,21 +12,18 @@
 #define FILL_BACKGROUND '.'
 #define DEFAULT_CANNY_SIGMA 0.2
 #define DEFAULT_CANNY_HYS_MIN 25
-#define DEFAULT_CANNY_HYS_MAX 45
-#define DEFAULT_BLUR_PASS 1
-#define DEFAULT_PENALTY 0.45
-#define DEFAULT_TRANSLATION 0
+#define DEFAULT_CANNY_HYS_MAX 50
+#define DEFAULT_PENALTY 0.65
+#define DEFAULT_TRANSLATION 2
 #define DEFAULT_WORKING_HEIGHT 1024
 #define DEFAULT_LINES 25
 #define THRESHOLD_FONT 31
-#define THRESHOLD_PIC 1
-#define THRESHOLD_CLIPART 30
 #define DEFAULT_PALETTEID AA_PAL_MONOCHROME
 #define DEFAULT_ALGORITHM AA_ALG_VECTOR_DST
 
 
 typedef enum {AA_FT_COURIER, AA_FT_LUCIDA, AA_FT_CONSOLA} AaFontId;
-typedef enum {AA_PAL_MONOCHROME, AA_PAL_ANSI_16, AA_PAL_FREE_MONO, AA_PAL_FREE_16, AA_PAL_FREE_64, AA_PAL_FREE_256, AA_PAL_MAX} AaPaletteId;
+typedef enum {AA_PAL_NONE, AA_PAL_MONOCHROME, AA_PAL_ANSI_16, AA_PAL_FREE_MONO, AA_PAL_FREE_16, AA_PAL_FREE_64, AA_PAL_FREE_256, AA_PAL_MAX} AaPaletteId;
 typedef enum {AA_ALG_PIXEL_11, AA_ALG_VECTOR_DST, AA_ALG_VECTOR_DST_FILL, AA_ALG_VECTOR_11, AA_ALG_VECTOR_11_FILL, AA_ALG_MAX} AaAlgorithmId;
 
 
@@ -66,7 +63,7 @@ typedef struct {
 bool aa_init_font_default(AaFontId id, const char* subset, AaFont* res);
 bool aa_init_font_from_picture(const char* font_picture_path, const char* font_carmap, const char* subset, AaFont* res);
 
-bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines=DEFAULT_LINES, int working_height=DEFAULT_WORKING_HEIGHT, int translation=DEFAULT_TRANSLATION, float penalty=DEFAULT_PENALTY, AaPaletteId palette_id=DEFAULT_PALETTEID, float canny_sigma=DEFAULT_CANNY_SIGMA, int canny_min=DEFAULT_CANNY_HYS_MIN, int canny_max=DEFAULT_CANNY_HYS_MAX, int blur_pass=DEFAULT_BLUR_PASS);
+bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines = DEFAULT_LINES, int working_height = DEFAULT_WORKING_HEIGHT, int translation = DEFAULT_TRANSLATION, float penalty = DEFAULT_PENALTY, AaPaletteId palette_id = DEFAULT_PALETTEID, float canny_sigma = DEFAULT_CANNY_SIGMA, int canny_min = DEFAULT_CANNY_HYS_MIN, int canny_max = DEFAULT_CANNY_HYS_MAX);
 
 FIMULTIBITMAP* aa_load_animated_file(const char* path);
 FIBITMAP* aa_load_file(const char* path);
@@ -76,5 +73,5 @@ bool aa_unload(AaImage* image);
 bool aa_output_ascii(AaImage* image, FILE* out);
 bool aa_output_ansi16(AaImage* image, FILE* out);
 bool aa_output_html_palette(AaImage* image, FILE* out);
-bool aa_output_html(AaImage* image, FILE* out, bool palette=true);
+bool aa_output_html(AaImage* image, FILE* out, bool palette = true);
 bool aa_output_html_mono(AaImage* image, FILE* out);

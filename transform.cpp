@@ -5,7 +5,6 @@
 
 #define DEBUG
 
-
 typedef BYTE pixel_t;
 
 
@@ -46,14 +45,14 @@ void convolution(const BYTE* in, BYTE* out, const float *kernel,
     if (normalize) {
         for (int m = khalf; m < nx - khalf; m++) {
             for (int n = khalf; n < ny - khalf; n++) {
-				BYTE lu=in[n*pitch+m];
-				if(lu >= ignore_min && lu <= ignore_max)
+				BYTE lu = in[n*pitch+m];
+				if(lu >= ignore_min && lu <=  ignore_max)
 					continue;
                 float pixel = 0.0;
                 size_t c = 0;
-                for (int j = -khalf; j <= khalf; j++)
-                    for (int i = -khalf; i <= khalf; i++) {
-                        pixel += in[(n - j) * pitch + m - i] * kernel[c];
+                for (int j = -khalf; j <=  khalf; j++)
+                    for (int i = -khalf; i <=  khalf; i++) {
+                        pixel +=  in[(n - j) * pitch + m - i] * kernel[c];
                         c++;
                     }
                 if (pixel < min)
@@ -66,22 +65,22 @@ void convolution(const BYTE* in, BYTE* out, const float *kernel,
 	
     for (int m = khalf; m < nx - khalf; m++) {
         for (int n = khalf; n < ny - khalf; n++) {
-			pixel_t lu=in[n*pitch+m];
-			if(!(lu >= ignore_min && lu <= ignore_max)) {
+			pixel_t lu = in[n*pitch+m];
+			if(!(lu >=  ignore_min && lu <=  ignore_max)) {
                 float pixel = 0.0;
                 size_t c = 0;
-                for (int j = -khalf; j <= khalf; j++)
-                    for (int i = -khalf; i <= khalf; i++) {
-                        pixel += in[(n - j) * pitch + m - i] * kernel[c];
+                for (int j = -khalf; j <=  khalf; j++)
+                    for (int i = -khalf; i <=  khalf; i++) {
+                        pixel +=  in[(n - j) * pitch + m - i] * kernel[c];
                         c++;
                     }
      
                 if (normalize)
                     pixel = MAX_BRIGHTNESS * (pixel - min) / (max - min);
 				if(pixel>MAX_BRIGHTNESS)
-					pixel=MAX_BRIGHTNESS;
+					pixel = MAX_BRIGHTNESS;
 				if(pixel<0)
-					pixel=0;
+					pixel = 0;
                 out[n * pitch + m] = (pixel_t)pixel;
             }
             else {
@@ -93,11 +92,11 @@ void convolution(const BYTE* in, BYTE* out, const float *kernel,
  
 
 FIBITMAP* convolute(FIBITMAP* source, const float *kernel, const int kn, const bool normalize, int ignore_min, int ignore_max) {
-    int nx=FreeImage_GetWidth(source);
-	int ny=FreeImage_GetHeight(source);
-	int pitch=FreeImage_GetPitch(source);
-    BYTE* in=FreeImage_GetBits(source);
-    BYTE* out=new BYTE[pitch*ny];
+    int nx = FreeImage_GetWidth(source);
+	int ny = FreeImage_GetHeight(source);
+	int pitch = FreeImage_GetPitch(source);
+    BYTE* in = FreeImage_GetBits(source);
+    BYTE* out = new BYTE[pitch*ny];
     convolution(in, out, kernel, nx, ny, pitch, kn, normalize, ignore_min, ignore_max);
 	memcpy(in, out, pitch*ny);
 	delete[] out;
@@ -108,26 +107,26 @@ FIBITMAP* convolute(FIBITMAP* source, const float *kernel, const int kn, const b
 
 
 FIBITMAP* thinningsub(FIBITMAP* source, int iter) {
-	int nx=FreeImage_GetWidth(source);
-	int ny=FreeImage_GetHeight(source);
-	int pitch=FreeImage_GetPitch(source);
-    BYTE* in=FreeImage_GetBits(source);
-	BYTE* mask=new BYTE[pitch*ny];
+	int nx = FreeImage_GetWidth(source);
+	int ny = FreeImage_GetHeight(source);
+	int pitch = FreeImage_GetPitch(source);
+    BYTE* in = FreeImage_GetBits(source);
+	BYTE* mask = new BYTE[pitch*ny];
 
-    const int threshold=128;
+    const int threshold = 128;
 
     for (int y = 1; y < ny-1; y++) {
         for (int x = 1; x < nx-1; x++) {
-            int ind=x+y*pitch;
-            int p1=in[ind]<threshold?0:1;
-            int p2=in[ind-pitch]<threshold?0:1;
-            int p3=in[ind-pitch+1]<threshold?0:1;
-            int p4=in[ind+1]<threshold?0:1;
-            int p5=in[ind+pitch+1]<threshold?0:1;
-            int p6=in[ind+pitch]<threshold?0:1;
-            int p7=in[ind+pitch-1]<threshold?0:1;
-            int p8=in[ind-1]<threshold?0:1;
-            int p9=in[ind-pitch-1]<threshold?0:1;
+            int ind = x+y*pitch;
+            int p1 = in[ind]<threshold?0:1;
+            int p2 = in[ind-pitch]<threshold?0:1;
+            int p3 = in[ind-pitch+1]<threshold?0:1;
+            int p4 = in[ind+1]<threshold?0:1;
+            int p5 = in[ind+pitch+1]<threshold?0:1;
+            int p6 = in[ind+pitch]<threshold?0:1;
+            int p7 = in[ind+pitch-1]<threshold?0:1;
+            int p8 = in[ind-1]<threshold?0:1;
+            int p9 = in[ind-pitch-1]<threshold?0:1;
             int A  = (p2 == 0 && p3 == 1) + (p3 == 0 && p4 == 1) + 
                      (p4 == 0 && p5 == 1) + (p5 == 0 && p6 == 1) + 
                      (p6 == 0 && p7 == 1) + (p7 == 0 && p8 == 1) +
@@ -136,14 +135,14 @@ FIBITMAP* thinningsub(FIBITMAP* source, int iter) {
             int m1 = iter == 0 ? (p2 * p4 * p6) : (p2 * p4 * p8);
             int m2 = iter == 0 ? (p4 * p6 * p8) : (p2 * p6 * p8);
 
-            if (A == 1 && (B >= 2 && B <= 6) && m1 == 0 && m2 == 0)
-                mask[ind]=255;
+            if (A == 1 && (B >=  2 && B <=  6) && m1 == 0 && m2 == 0)
+                mask[ind] = 255;
             else
-                mask[ind]=0;
+                mask[ind] = 0;
         }
     }
-    for(int i=0;i<pitch*ny;i++) {
-    	in[i]=in[i] & ~(mask[i]);
+    for(int i = 0;i<pitch*ny;i++) {
+    	in[i] = in[i] & ~(mask[i]);
     }
 	delete[] mask;
 	return source;
@@ -152,16 +151,16 @@ FIBITMAP* thinningsub(FIBITMAP* source, int iter) {
 
 
 FIBITMAP* thinning(FIBITMAP* source) {
-	int nx=FreeImage_GetWidth(source);
-	int ny=FreeImage_GetHeight(source);
-	int pitch=FreeImage_GetPitch(source);
-	bool cont=true;
-	BYTE* old_buffer=new BYTE[pitch*ny];
+	int nx = FreeImage_GetWidth(source);
+	int ny = FreeImage_GetHeight(source);
+	int pitch = FreeImage_GetPitch(source);
+	bool cont = true;
+	BYTE* old_buffer = new BYTE[pitch*ny];
 	while(cont) {
-		memcpy(old_buffer,FreeImage_GetBits(source),pitch*ny);
-		source=thinningsub(source, 0);
-		source=thinningsub(source, 1);
-		cont=memcmp(FreeImage_GetBits(source),old_buffer,pitch*ny)!=0;
+		memcpy(old_buffer, FreeImage_GetBits(source), pitch*ny);
+		source = thinningsub(source, 0);
+		source = thinningsub(source, 1);
+		cont = memcmp(FreeImage_GetBits(source), old_buffer, pitch*ny)!=0;
 	}
 	delete[] old_buffer;    
 	return source;
@@ -169,49 +168,49 @@ FIBITMAP* thinning(FIBITMAP* source) {
 
 
 FIBITMAP* threshold(FIBITMAP* source, BYTE threshold) {
-	int ny=FreeImage_GetHeight(source);
-	int pitch=FreeImage_GetPitch(source);
-	BYTE* v=FreeImage_GetBits(source);
-	for(int i=0;i<pitch*ny;i++,v++) {
+	int ny = FreeImage_GetHeight(source);
+	int pitch = FreeImage_GetPitch(source);
+	BYTE* v = FreeImage_GetBits(source);
+	for(int i = 0;i<pitch*ny;i++, v++) {
 		if(*v<threshold)
-			*v=0;
+			*v = 0;
 		else
-			*v=MAX_BRIGHTNESS;
+			*v = MAX_BRIGHTNESS;
 	}
     return source;
 }
 
 FIBITMAP* normalize(FIBITMAP* source) {
-	int nx=FreeImage_GetWidth(source);
-	int ny=FreeImage_GetHeight(source);
-	int pitch=FreeImage_GetPitch(source);
-	BYTE* v=FreeImage_GetBits(source);
-    float maximum=0;
-    for(int y=0; y < ny; y++,v+=pitch-nx) {
-        for(int x=0; x < nx; x++,v++) {
+	int nx = FreeImage_GetWidth(source);
+	int ny = FreeImage_GetHeight(source);
+	int pitch = FreeImage_GetPitch(source);
+	BYTE* v = FreeImage_GetBits(source);
+    float maximum = 0;
+    for(int y = 0; y < ny; y++, v+= pitch-nx) {
+        for(int x = 0; x < nx; x++, v++) {
             if(*v>maximum) {
-                maximum=*v;
+                maximum = *v;
             }
         }
 	}
-    v=FreeImage_GetBits(source);
-    for(int y=0; y < ny; y++,v+=pitch-nx) {
-        for(int x=0; x < nx; x++,v++) {
-           *v=(*v*MAX_BRIGHTNESS)/maximum;
+    v = FreeImage_GetBits(source);
+    for(int y = 0; y < ny; y++, v+= pitch-nx) {
+        for(int x = 0; x < nx; x++, v++) {
+           *v = (*v*MAX_BRIGHTNESS)/maximum;
         }
 	}
     return source;
 }
 
 bool is_clipart(FIBITMAP* source) {
-	int nx=FreeImage_GetWidth(source);
-	int ny=FreeImage_GetHeight(source);
-    int surface=nx*ny;
+	int nx = FreeImage_GetWidth(source);
+	int ny = FreeImage_GetHeight(source);
+    int surface = nx*ny;
 	DWORD histogram[255];
     FreeImage_GetHistogram(source, histogram, FICC_BLACK);
-    int threshold=(1.0*surface)/255;
-    int howmanygreater=0;
-    for(int i=0;i<255;i++) {
+    int threshold = (1.0*surface)/255;
+    int howmanygreater = 0;
+    for(int i = 0;i<255;i++) {
         if(histogram[i] > threshold)
             howmanygreater++;
     }
@@ -222,12 +221,12 @@ bool is_clipart(FIBITMAP* source) {
  * gaussianFilter:
  * http://www.songho.ca/dsp/cannyedge/cannyedge.html
  * determine surface of kernel (odd #)
- * 0.0 <= sigma < 0.5 : 3
- * 0.5 <= sigma < 1.0 : 5
- * 1.0 <= sigma < 1.5 : 7
- * 1.5 <= sigma < 2.0 : 9
- * 2.0 <= sigma < 2.5 : 11
- * 2.5 <= sigma < 3.0 : 13 ...
+ * 0.0 <=  sigma < 0.5 : 3
+ * 0.5 <=  sigma < 1.0 : 5
+ * 1.0 <=  sigma < 1.5 : 7
+ * 1.5 <=  sigma < 2.0 : 9
+ * 2.0 <=  sigma < 2.5 : 11
+ * 2.5 <=  sigma < 3.0 : 13 ...
  * kernelSize = 2 * int(2*sigma) + 3;
  */
 FIBITMAP* gaussian_filter(FIBITMAP* source, const float sigma)
@@ -245,17 +244,17 @@ FIBITMAP* gaussian_filter(FIBITMAP* source, const float sigma)
             c++;
         }
 	}
-    return convolute(source, kernel, n, false);
+    return convolute(source, kernel, n, true);
 }
 
 
 void propagate_max(int X, int Y, int pitch, BYTE* buffer)
 {
-	int ind=X+Y*pitch;
-	int ind_ym1=ind-pitch;
-	int ind_yp1=ind+pitch;
+	int ind = X+Y*pitch;
+	int ind_ym1 = ind-pitch;
+	int ind_yp1 = ind+pitch;
 
-	BYTE val=buffer[ind];
+	BYTE val = buffer[ind];
 
     //1
     if (buffer[ind+1] > 0 && buffer[ind+1] < val) {
@@ -285,7 +284,7 @@ void propagate_max(int X, int Y, int pitch, BYTE* buffer)
     //6
     if (buffer[ind_yp1-1] > 0 && buffer[ind_yp1-1]  < val) {
         buffer[ind_yp1-1] = val;
-        propagate_max(X - 1, Y + 1, pitch,buffer);
+        propagate_max(X - 1, Y + 1, pitch, buffer);
     }
     //7
     if (buffer[ind_yp1] > 0 && buffer[ind_yp1]  < val) {
@@ -307,10 +306,10 @@ void propagate_max(int X, int Y, int pitch, BYTE* buffer)
  */
 FIBITMAP* canny_edge_detection2(FIBITMAP* source, float sigma, int MinHysteresisThresh, int MaxHysteresisThresh) 
 {
-    int width=FreeImage_GetWidth(source);
-	int height=FreeImage_GetHeight(source);
-	int pitch=FreeImage_GetPitch(source);
-    int surface=pitch*height;
+    int width = FreeImage_GetWidth(source);
+	int height = FreeImage_GetHeight(source);
+	int pitch = FreeImage_GetPitch(source);
+    int surface = pitch*height;
 
 	const float thin[] = {0, -1, 1,
                         0, -1, 1,
@@ -320,99 +319,116 @@ FIBITMAP* canny_edge_detection2(FIBITMAP* source, float sigma, int MinHysteresis
                         0, 0, 0};    
 	
 	if(sigma)
-		source=gaussian_filter(source, sigma);
-    BYTE* buffer=FreeImage_GetBits(source);
+		source = gaussian_filter(source, sigma);
+    BYTE* buffer = FreeImage_GetBits(source);
 	
-	int kn=2 * (int)(2 * sigma) + 3;
-	int limit=kn/2;
+	int kn = 2 * (int)(2 * sigma) + 3;
+	int limit = kn/2;
     int i, j;
 
 #ifdef DEBUG
-    fprintf(stderr,"Smoothed image\n");
-	DebugWriter(source,"gaussed.png");
+    fprintf(stderr, "Smoothed image\n");
+	DebugWriter(source, "gaussed.png");
 #endif    
 
     //Sobel Masks
-    float SobelX[] = {1,0,-1,  1,0,-1,  1,0,-1};
-    float SobelY[] = {1,1,1,  0,0,0,  -1,-1,-1};
-    BYTE* DerivativeX = new BYTE[surface];
-    BYTE* DerivativeY = new BYTE[surface];
-    convolution(buffer, DerivativeX, SobelX, width, height, pitch, 3, false, -1, -1);
-    convolution(buffer, DerivativeY, SobelY, width, height, pitch, 3, false, -1, -1);
+    float SobelX1[] = {1,0,-1, 1,0,-1,  1,0,-1};
+    float SobelX2[] = {-1,0,1, -1,0,1,  -1,0,1};
+    float SobelY1[] = {1,1,1,  0,0,0,  -1,-1,-1};
+    float SobelY2[] = {-1,-1,-1,  0,0,0,  1,1,1};
+    BYTE* DerivativeX1 = new BYTE[surface];
+    BYTE* DerivativeX2 = new BYTE[surface];
+    BYTE* DerivativeY1 = new BYTE[surface];
+    BYTE* DerivativeY2 = new BYTE[surface];
+    convolution(buffer, DerivativeX1, SobelX1, width, height, pitch, 3, false, -1, -1);
+    convolution(buffer, DerivativeY1, SobelY1, width, height, pitch, 3, false, -1, -1);
+    convolution(buffer, DerivativeX2, SobelX2, width, height, pitch, 3, false, -1, -1);
+    convolution(buffer, DerivativeY2, SobelY2, width, height, pitch, 3, false, -1, -1);
 #ifdef DEBUG
-    fprintf(stderr,"Computed derivatives using sobel masks\n");
+    fprintf(stderr, "Computed derivatives using sobel masks\n");
 #endif        
 
-    float* NonMax=new float[surface];
+    float* NonMax = new float[surface];
     //Compute the gradient magnitude based on derivatives in x and y:
-	for(int i=0;i<surface;i++) {
-		NonMax[i] = (float)sqrt((((float)DerivativeX[i]) * DerivativeX[i]) + (((float)DerivativeY[i]) * DerivativeY[i]));
+	for(int i = 0;i<surface;i++) {
+		float a = (float)sqrt((((float)DerivativeX1[i]) * DerivativeX1[i]) + (((float)DerivativeY1[i]) * DerivativeY1[i]));
+		float b = (float)sqrt((((float)DerivativeX2[i]) * DerivativeX2[i]) + (((float)DerivativeY2[i]) * DerivativeY2[i]));
+        NonMax[i] = a>b?a:b;
     }
+ 
     
 #ifdef DEBUG
-    fprintf(stderr,"Computed gradients\n");
+    fprintf(stderr, "Computed gradients\n");
 #endif     
     int r, c;
     float Tangent;
-    for (i = limit; i <= (width - limit) - 1; i++) {
-        for (j = limit; j <= (height - limit) - 1; j++) {
+    
+    for (i = limit; i <=  (width - limit) - 1; i++) {
+        for (j = limit; j <=  (height - limit) - 1; j++) {
 
-            if (DerivativeX[i + j*pitch] == 0)
+            if (DerivativeX1[i + j*pitch] == 0)
                 Tangent = 90.0;
             else
-                Tangent = (float)(atan(((float)DerivativeY[i + j*pitch]) / DerivativeX[i + j*pitch]) * 180.0 / M_PI); //rad to degree
+                Tangent = (float)(atan(((float)DerivativeY1[i + j*pitch]) / DerivativeX1[i + j*pitch]) * 180.0 / M_PI); //rad to degree
             //Horizontal Edge
-			if (((-22.5 < Tangent) && (Tangent <= 22.5)) || (157.5 < Tangent) || (Tangent <= -157.5)) {
+			if (((-22.5 < Tangent) && (Tangent <= 22.5)) || (157.5 < Tangent) || (Tangent <=  -157.5)) {
                 if ((NonMax[i + j*pitch] < NonMax[i + (j + 1)*pitch]) || (NonMax[i + j*pitch] < NonMax[i + (j - 1)*pitch]))
                     NonMax[i + j*pitch] = 0;
             }
             //Vertical Edge
-            if (((-112.5 < Tangent) && (Tangent <= -67.5)) || ((67.5 < Tangent) && (Tangent <= 112.5))) {
+            else if (((-112.5 < Tangent) && (Tangent <=  -67.5)) || ((67.5 < Tangent) && (Tangent <=  112.5))) {
                 if ((NonMax[i + j*pitch] < NonMax[i + 1 + j*pitch]) || (NonMax[i + j*pitch] < NonMax[i - 1 + j*pitch]))
                     NonMax[i + j*pitch] = 0;
             }
             //+45 Degree Edge
-            if (((-67.5 < Tangent) && (Tangent <= -22.5)) || ((112.5 < Tangent) && (Tangent <= 157.5))) {
+            else if (((-67.5 < Tangent) && (Tangent <=  -22.5)) || ((112.5 < Tangent) && (Tangent <=  157.5))) {
                 if ((NonMax[i + j*pitch] < NonMax[i + 1 + (j - 1)*pitch]) || (NonMax[i + j*pitch] < NonMax[i - 1 + (j + 1)*pitch]))
                     NonMax[i + j*pitch] = 0;
             }
             //-45 Degree Edge
-            if (((-157.5 < Tangent) && (Tangent <= -112.5)) || ((67.5 < Tangent) && (Tangent <= 22.5))) {
+            else if (((-157.5 < Tangent) && (Tangent <=  -112.5)) || ((67.5 < Tangent) && (Tangent <=  22.5))) {
                 if ((NonMax[i + j*pitch] < NonMax[i + 1, j + 1]) || (NonMax[i + j*pitch] < NonMax[i - 1 + (j - 1)*pitch]))
                     NonMax[i + j*pitch] = 0;
             }
         }
     }
+    
 #ifdef DEBUG
-    fprintf(stderr,"Suppressed non-maximals\n");
+    fprintf(stderr, "Suppressed non-maximals\n");
 #endif 	
 
 
     //Histery
+#ifdef DEBUG
     float* GNH = new float[surface];
-    float* GNL = new float[surface]; ;
+    float* GNL = new float[surface]; 
+#endif
 
-	for(int i=0;i<surface;i++) {
-		if (NonMax[i] >= MaxHysteresisThresh) {
+	for(int i = 0;i<surface;i++) {
+		if (NonMax[i] >=  MaxHysteresisThresh) {
 			buffer[i] = 2;	//high
+#ifdef DEBUG
 			GNH[i] = 255;
+#endif
 		}
-		else if ((NonMax[i] < MaxHysteresisThresh) && (NonMax[i] >= MinHysteresisThresh)) {
+		else if ((NonMax[i] < MaxHysteresisThresh) && (NonMax[i] >=  MinHysteresisThresh)) {
 			buffer[i] = 1;	//low
+#ifdef DEBUG
 			GNL[i] = 255;
+#endif
 		}
 		else {
-			buffer[i]=0;
+			buffer[i] = 0;
 		}
     }
 #ifdef DEBUG
-    fprintf(stderr,"Thresholded with hysteris\n");
+    fprintf(stderr, "Thresholded with hysteris\n");
 #endif 		
 
     //keep only low-edges connected to high edges
-    for (i = limit; i <= (width - 1) - limit; i++) {
-        for (j = limit; j <= (height  - 1) - limit; j++) {
-            int ind=i+j*pitch;
+    for (i = limit; i <=  (width - 1) - limit; i++) {
+        for (j = limit; j <=  (height  - 1) - limit; j++) {
+            int ind = i+j*pitch;
             if(buffer[ind] == 2) {
                 buffer[ind] = 3;
                 propagate_max(i, j, pitch, buffer);
@@ -420,20 +436,20 @@ FIBITMAP* canny_edge_detection2(FIBITMAP* source, float sigma, int MinHysteresis
         }
     }
 #ifdef DEBUG
-    fprintf(stderr,"Connected edges\n");
+    fprintf(stderr, "Connected edges\n");
 #endif 
 
 #ifdef DEBUG
-    FIBITMAP* clone=FreeImage_Clone(source);
-    BYTE* test=FreeImage_GetBits(clone);
+    FIBITMAP* clone = FreeImage_Clone(source);
+    BYTE* test = FreeImage_GetBits(clone);
 	for (i = 0; i < surface; i++) {
-		test[i]=(BYTE)GNL[i];
+		test[i] = (BYTE)GNL[i];
     }
-	DebugWriter(clone,"GNL.png");
+	DebugWriter(clone, "GNL.png");
 	for (i = 0; i < surface; i++) {
-		test[i]=(BYTE)GNH[i];
+		test[i] = (BYTE)GNH[i];
     }
-	DebugWriter(clone,"GNH.png");
+	DebugWriter(clone, "GNH.png");
     FreeImage_Unload(clone);
 #endif	
 
@@ -444,69 +460,32 @@ FIBITMAP* canny_edge_detection2(FIBITMAP* source, float sigma, int MinHysteresis
 			buffer[i] = 0;//MAX_BRIGHTNESS/8;
     }
     delete[] NonMax;
+#ifdef DEBUG
     delete[] GNL;
     delete[] GNH;
-    delete[] DerivativeX;
-    delete[] DerivativeY;
+#endif
+    delete[] DerivativeX1;
+    delete[] DerivativeY1;
+    delete[] DerivativeX2;
+    delete[] DerivativeY2;
     return source;
 }
 
 /*
- * Returns a greyscale bitmap
+ * 
+ *
  */
 FIBITMAP* canny_edge_detection(FIBITMAP* source, float sigma, int MinHysteresisThresh, int MaxHysteresisThresh) 
 {
-	int bpp=FreeImage_GetBPP(source);
-    int width=FreeImage_GetWidth(source);
-	if(bpp<=8) {
-		if(bpp!=8) {
-			FIBITMAP* greyscale=FreeImage_ConvertToGreyscale(source);
-			FreeImage_Unload(source);
-			source=greyscale;
-		}
-		return canny_edge_detection2(source, sigma, MinHysteresisThresh, MaxHysteresisThresh);	
-	}
-	else {
-		if(bpp != 24) {
-			FIBITMAP* b24=FreeImage_ConvertTo24Bits(source);
-			FreeImage_Unload(source);
-			source=b24;
-		}
-		FIBITMAP* red=FreeImage_GetChannel(source,FICC_RED);
-		int surface=FreeImage_GetPitch(red)*FreeImage_GetHeight(red);
-		red=canny_edge_detection2(red, sigma, MinHysteresisThresh, MaxHysteresisThresh);	
-#ifdef DEBUG
-		DebugWriter(red,"red.png");
-#endif	
-		BYTE* dst=FreeImage_GetBits(red);
-
-		FIBITMAP* green=FreeImage_GetChannel(source,FICC_GREEN);
-	    green=canny_edge_detection2(green, sigma, MinHysteresisThresh, MaxHysteresisThresh);	
-#ifdef DEBUG
-		DebugWriter(green,"green.png");
-#endif	
-		BYTE* src=FreeImage_GetBits(green);
-		for(int i=0;i<surface;i++) {
-			dst[i]|=src[i];
-		}
-		FreeImage_Unload(green);
-
-		FIBITMAP* blue=FreeImage_GetChannel(source,FICC_BLUE);
-		blue=canny_edge_detection2(blue, sigma, MinHysteresisThresh, MaxHysteresisThresh);	
-
-#ifdef DEBUG
-		DebugWriter(blue,"blue.png");
-#endif	
-		src=FreeImage_GetBits(blue);
-		for(int i=0;i<surface;i++) {
-			dst[i]|=src[i];
-		}
-		FreeImage_Unload(blue);
-
-		FreeImage_Unload(source);
-		source=red;		
-	}
-	return source;
+	int bpp = FreeImage_GetBPP(source);
+    int width = FreeImage_GetWidth(source);
+	
+    bool copied = false;
+    if ( bpp != 8 ) {
+        source = FreeImage_ConvertToGreyscale(source);
+        copied = true;
+    }
+    return canny_edge_detection2(source, sigma, MinHysteresisThresh, MaxHysteresisThresh);	
 }
 
 
@@ -555,14 +534,14 @@ char *base64_encode(const unsigned char *data, size_t input_length) {
 }
 
 char* base64(FIBITMAP* image, FREE_IMAGE_FORMAT format) {
-    FIMEMORY* hmem=FreeImage_OpenMemory();
-    FreeImage_SaveToMemory(format,image,hmem,0);
-    long size=FreeImage_TellMemory(hmem);
+    FIMEMORY* hmem = FreeImage_OpenMemory();
+    FreeImage_SaveToMemory(format, image, hmem, 0);
+    long size = FreeImage_TellMemory(hmem);
     FreeImage_SeekMemory(hmem, 0L, SEEK_SET);
     BYTE* data;
     DWORD buf_len;
     FreeImage_AcquireMemory(hmem, &data, &buf_len);
-    char* res=base64_encode(data, size);
+    char* res = base64_encode(data, size);
     FreeImage_CloseMemory(hmem);
     return res;
 }
