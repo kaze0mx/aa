@@ -9,6 +9,8 @@
 #define PALETTE_MAX_SIZE 256
 
 
+#define DEBUG
+
 BYTE font_consola[] = "" 
 #include "consola.h"
 ;

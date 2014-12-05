@@ -3,6 +3,8 @@
 #include <float.h>
 #include "transform.h"
 
+#define DEBUG
+
 typedef BYTE pixel_t;
 
 
@@ -61,10 +63,14 @@ void convolution(const BYTE* in, BYTE* out, const float *kernel,
 		}
 	}
 	
-    for (int m = khalf; m < nx - khalf; m++) {
-        for (int n = khalf; n < ny - khalf; n++) {
-			pixel_t lu = in[n*pitch+m];
-			if(!(lu >=  ignore_min && lu <=  ignore_max)) {
+    for (int m = 0; m < nx; m++) {
+        for (int n = 0; n < ny; n++) {
+            int ind = n*pitch+m;
+			pixel_t lu = in[ind];
+            if ( m < khalf || m > nx-khalf || n < khalf || n > ny-khalf ) {
+                out[ind] = 0;
+            }
+            else if(!(lu >=  ignore_min && lu <=  ignore_max)) {
                 float pixel = 0.0;
                 size_t c = 0;
                 for (int j = -khalf; j <=  khalf; j++)
@@ -79,10 +85,10 @@ void convolution(const BYTE* in, BYTE* out, const float *kernel,
 					pixel = MAX_BRIGHTNESS;
 				if(pixel<0)
 					pixel = 0;
-                out[n * pitch + m] = (pixel_t)pixel;
+                out[ind] = (pixel_t)pixel;
             }
             else {
-                out[n * pitch + m] = lu;
+                out[ind] = lu;
             }
         }
 	}
