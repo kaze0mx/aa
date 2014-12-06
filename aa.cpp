@@ -350,6 +350,8 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 	int real_width = FreeImage_GetWidth(image);
 	int real_height = FreeImage_GetHeight(image);
     int real_bpp = FreeImage_GetBPP(image);
+    bool greyscale = false;
+    bool rgb = false;
 #ifdef DEBUG
 	GenericWriter(image, "original.png", 0);
 #endif
@@ -371,7 +373,7 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 		return false;
 	}     
     int working_width = FreeImage_GetWidth(final);
-    // mean shift filter
+    // mean shift filter to segmentize the image and erase light differences (very slow)
     if(meanshift_r2 && meanshift_d2) {
         if ( real_bpp != 24 ) {
             FIBITMAP* rgb = FreeImage_ConvertTo24Bits(final);
@@ -384,6 +386,17 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
         GenericWriter(final, "meanshift.png", 0);
 #endif    
     }
+    // use a soft blur to erase small differences (fast)
+    else if(sigma) {
+        FIBITMAP* grey = FreeImage_ConvertToGreyscale(final);
+        FreeImage_Unload(final);
+        final = gaussian_filter(grey, sigma);
+        greyscale = true;
+#ifdef DEBUG
+        fprintf(stderr, "Gaussed image\n");
+        GenericWriter(final, "gaussed.png", 0);
+#endif    
+    }
     // edge detection
     bool edge_detected = false;
 	if(algorithm >=  AA_ALG_VECTOR_DST && algorithm <=  AA_ALG_VECTOR_11_FILL) {
@@ -392,10 +405,13 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 #ifdef DEBUG
 		fprintf(stderr, "Performing canny edge detection\n");
 #endif 
-        // convert to greyscale
-        FIBITMAP* grey = FreeImage_ConvertToGreyscale(final);
-        FreeImage_Unload(final);
-        final = grey;
+        if( !greyscale ) {
+            // convert to greyscale
+            FIBITMAP* grey = FreeImage_ConvertToGreyscale(final);
+            FreeImage_Unload(final);
+            final = grey;
+            greyscale = true;
+        }
 
 		final = canny_edge_detection(final, canny_min, canny_max);
 		if(final==NULL) {
@@ -470,7 +486,6 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 	FIBITMAP* resized = FreeImage_Rescale(final, width, height, filter);
 	FreeImage_Unload(final);
 
-    
     //threshold
     if ( edge_detected ) { 
         FreeImage_Invert(resized);

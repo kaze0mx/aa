@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
     if ( num_images == 1 ) {
         // Convert single image and output to stdout
         AaImage aaimage;
-        aa_convert(image, AA_ALG_VECTOR_DST, &font, &aaimage, size, 1024, 1, DEFAULT_PENALTY, AA_PAL_NONE, DEFAULT_SIGMA, DEFAULT_CANNY_HYS_MIN, DEFAULT_CANNY_HYS_MAX);
+        aa_convert(image, AA_ALG_VECTOR_DST, &font, &aaimage, size, 1024, 1, DEFAULT_PENALTY, AA_PAL_NONE, DEFAULT_SIGMA, DEFAULT_CANNY_HYS_MIN, DEFAULT_CANNY_HYS_MAX, 0);
         aa_output_ascii(&aaimage, stdout);
         aa_unload(&aaimage);
     }
@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
                 }
             }
             AaImage aaimage;
-            aa_convert(frame, AA_ALG_VECTOR_DST, &font, &aaimage, size, 768, DEFAULT_TRANSLATION, DEFAULT_PENALTY, AA_PAL_NONE, DEFAULT_SIGMA, DEFAULT_CANNY_HYS_MIN, DEFAULT_CANNY_HYS_MAX);
+            aa_convert(frame, AA_ALG_VECTOR_DST, &font, &aaimage, size, 768, DEFAULT_TRANSLATION, DEFAULT_PENALTY, AA_PAL_NONE, DEFAULT_SIGMA, DEFAULT_CANNY_HYS_MIN, DEFAULT_CANNY_HYS_MAX, 0, 0, 0, 0);
 
             fprintf(outhtml, "<div id = 'frame_%d' style = 'display:none'>\n", j);
             aa_output_html_mono(&aaimage, outhtml);
