@@ -12,6 +12,8 @@
 #define FILL_BACKGROUND '.'
 #define DEFAULT_MEANSHIFT_R2 6.5
 #define DEFAULT_MEANSHIFT_D2 7.0
+#define DEFAULT_MEANSHIFT_N 5
+#define DEFAULT_MEANSHIFT_ITERATIONS 4
 #define DEFAULT_SIGMA 0.2
 #define DEFAULT_CANNY_HYS_MIN 30
 #define DEFAULT_CANNY_HYS_MAX 50
@@ -65,7 +67,7 @@ typedef struct {
 bool aa_init_font_default(AaFontId id, const char* subset, AaFont* res);
 bool aa_init_font_from_picture(const char* font_picture_path, const char* font_carmap, const char* subset, AaFont* res);
 
-bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines = DEFAULT_LINES, int working_height = DEFAULT_WORKING_HEIGHT, int translation = DEFAULT_TRANSLATION, float penalty = DEFAULT_PENALTY, AaPaletteId palette_id = DEFAULT_PALETTEID, float sigma = DEFAULT_SIGMA, int canny_min = DEFAULT_CANNY_HYS_MIN, int canny_max = DEFAULT_CANNY_HYS_MAX, float meanshift_r2 = DEFAULT_MEANSHIFT_R2, float meanshift_d2 = DEFAULT_MEANSHIFT_D2);
+bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines = DEFAULT_LINES, int working_height = DEFAULT_WORKING_HEIGHT, int translation = DEFAULT_TRANSLATION, float penalty = DEFAULT_PENALTY, AaPaletteId palette_id = DEFAULT_PALETTEID, float sigma = DEFAULT_SIGMA, int canny_min = DEFAULT_CANNY_HYS_MIN, int canny_max = DEFAULT_CANNY_HYS_MAX, float meanshift_r2 = DEFAULT_MEANSHIFT_R2, float meanshift_d2 = DEFAULT_MEANSHIFT_D2, int meanshift_n = DEFAULT_MEANSHIFT_N, int meanshift_iterations = DEFAULT_MEANSHIFT_ITERATIONS);
 
 FIMULTIBITMAP* aa_load_animated_file(const char* path);
 FIBITMAP* aa_load_file(const char* path);

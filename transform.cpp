@@ -3,8 +3,6 @@
 #include <float.h>
 #include "transform.h"
 
-#define DEBUG
-
 typedef BYTE pixel_t;
 
 //RGB to LUV conversion
@@ -145,7 +143,7 @@ void rgb_to_luv(FIBITMAP* source, float* out_luv) {
 /*
  * Only works on 24 bpp
  */
-FIBITMAP* mean_shift_filter(FIBITMAP* source, float radiusr2, float radiusd2) {
+FIBITMAP* mean_shift_filter(FIBITMAP* source, float radiusr2, float radiusd2, int n, int max_iterations) {
     int width = FreeImage_GetWidth(source);
     int height = FreeImage_GetHeight(source);
     int pitch = FreeImage_GetPitch(source);
@@ -153,10 +151,8 @@ FIBITMAP* mean_shift_filter(FIBITMAP* source, float radiusr2, float radiusd2) {
     WORD bpp = FreeImage_GetBPP(source);
     assert(bpp == 24);
 
-    const int N = 5;
     const double H = 0.499999f;
     const float distR0 = 0.0001;
-    const int maxIteration = 3;
     
     float* luvVal = new float[width*height*3];
     float* out_luvVal = new float[width*height*3];
@@ -184,19 +180,19 @@ FIBITMAP* mean_shift_filter(FIBITMAP* source, float radiusr2, float radiusd2) {
             newY = winY;
             iteration = 0;            
             distR2 = 10;
-            while(distR2 > distR0 && iteration < maxIteration) {
+            while(distR2 > distR0 && iteration < max_iterations) {
                 wSum = 0; 
                 newL = 0.0f; 
                 newU = 0.0f; 
                 newV = 0.0f;
                 xSum = 0; 
                 ySum = 0;
-                for(i = -N; i < N; i++) {
+                for(i = -n; i < n; i++) {
                     k = newY + i;
                     if(k<0 || k>= height) 
                         continue;
                     depl = k*width;
-                    for(j = -N; j < N; j++) {
+                    for(j = -n; j < n; j++) {
                         k = newX + j;
                         if(k<0 || k>= width) 
                             continue;

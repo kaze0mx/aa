@@ -9,8 +9,6 @@
 #define PALETTE_MAX_SIZE 256
 
 
-#define DEBUG
-
 BYTE font_consola[] = "" 
 #include "consola.h"
 ;
@@ -348,7 +346,7 @@ BYTE get_best_color(FIBITMAP* paletized, int x, int y) {
 /*
  *
  */
-bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines, int working_height, int translation, float penalty, AaPaletteId palette_id, float sigma, int canny_min, int canny_max, float meanshift_r2, float meanshift_d2) {
+bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines, int working_height, int translation, float penalty, AaPaletteId palette_id, float sigma, int canny_min, int canny_max, float meanshift_r2, float meanshift_d2, int meanshift_n, int meanshift_iterations) {
 	int real_width = FreeImage_GetWidth(image);
 	int real_height = FreeImage_GetHeight(image);
     int real_bpp = FreeImage_GetBPP(image);
@@ -380,7 +378,7 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
             FreeImage_Unload(final);
             final = rgb;
         }
-        final = mean_shift_filter(final, meanshift_r2, meanshift_d2);
+        final = mean_shift_filter(final, meanshift_r2, meanshift_d2, meanshift_n, meanshift_iterations);
 #ifdef DEBUG
         fprintf(stderr, "Mean-shifted image\n");
         GenericWriter(final, "meanshift.png", 0);
@@ -404,7 +402,7 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 			return false;
 		}
 #ifdef DEBUG
-		fprintf(stderr, "Blurring out small differences");
+		fprintf(stderr, "Blurring out small differences\n");
 		GenericWriter(final, "edges.png", 0);
 #endif 
         float postsigma;
