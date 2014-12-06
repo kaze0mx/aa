@@ -4,14 +4,14 @@
 //#define DEBUG 
 #define FONT_FILE "fnt.png"
 #define FONT_CARMAP " ²$^¨°+*#&é\"'`|[]{}~(-_à)=123456789azertyuiopqsdfghjklm<wxcvbn,;:!AZERTYUIOPQSDFGHJKLM%µ>WXC@VBN?.\\/§%"
-#define FONT_SUBSET " $^+*#&\"'|~(-_)=345atiopqdfghjkl<,:AZTYJL%>X@VN?.\\/"
+#define FONT_SUBSET " $^+*#&\"'|~(-)=345atiopqdfghjkl<,:AZTYJL%>X@VN?.\\/_"
 //#define FONT_SUBSET " $#.o"
 
 #define PASX 8
 #define PASY 16
 #define FILL_BACKGROUND '.'
-#define DEFAULT_CANNY_SIGMA 0.2
-#define DEFAULT_CANNY_HYS_MIN 25
+#define DEFAULT_SIGMA 0.2
+#define DEFAULT_CANNY_HYS_MIN 30
 #define DEFAULT_CANNY_HYS_MAX 50
 #define DEFAULT_PENALTY 0.65
 #define DEFAULT_TRANSLATION 2
@@ -63,7 +63,7 @@ typedef struct {
 bool aa_init_font_default(AaFontId id, const char* subset, AaFont* res);
 bool aa_init_font_from_picture(const char* font_picture_path, const char* font_carmap, const char* subset, AaFont* res);
 
-bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines = DEFAULT_LINES, int working_height = DEFAULT_WORKING_HEIGHT, int translation = DEFAULT_TRANSLATION, float penalty = DEFAULT_PENALTY, AaPaletteId palette_id = DEFAULT_PALETTEID, float canny_sigma = DEFAULT_CANNY_SIGMA, int canny_min = DEFAULT_CANNY_HYS_MIN, int canny_max = DEFAULT_CANNY_HYS_MAX);
+bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines = DEFAULT_LINES, int working_height = DEFAULT_WORKING_HEIGHT, int translation = DEFAULT_TRANSLATION, float penalty = DEFAULT_PENALTY, AaPaletteId palette_id = DEFAULT_PALETTEID, float sigma = DEFAULT_SIGMA, int canny_min = DEFAULT_CANNY_HYS_MIN, int canny_max = DEFAULT_CANNY_HYS_MAX);
 
 FIMULTIBITMAP* aa_load_animated_file(const char* path);
 FIBITMAP* aa_load_file(const char* path);

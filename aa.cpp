@@ -348,13 +348,11 @@ BYTE get_best_color(FIBITMAP* paletized, int x, int y) {
 /*
  *
  */
-bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines, int working_height, int translation, float penalty, AaPaletteId palette_id, float canny_sigma, int canny_min, int canny_max) {
+bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines, int working_height, int translation, float penalty, AaPaletteId palette_id, float sigma, int canny_min, int canny_max) {
 	int real_width = FreeImage_GetWidth(image);
 	int real_height = FreeImage_GetHeight(image);
 #ifdef DEBUG
-    printf("Starting\n");
 	GenericWriter(image, "original.png", 0);
-    printf("Starting2\n");
 #endif
 	//resize working
 	FIBITMAP* final = NULL;
@@ -373,7 +371,16 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 	if(final==NULL) {
 		return false;
 	}
+    // gaussian blur
+    if(sigma) {
+		final = gaussian_filter(final, sigma);
+#ifdef DEBUG
+        fprintf(stderr, "Smoothed image\n");
+        GenericWriter(final, "gaussed.png", 0);
+#endif    
+    }        
 
+    // edge detection
     bool edge_detected = false;
 	if(algorithm >=  AA_ALG_VECTOR_DST && algorithm <=  AA_ALG_VECTOR_11_FILL) {
         edge_detected = true;
@@ -381,7 +388,12 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 #ifdef DEBUG
 		fprintf(stderr, "Performing canny edge detection\n");
 #endif 
-		final = canny_edge_detection(final, canny_sigma, canny_min, canny_max);
+        // convert to greyscale
+        FIBITMAP* grey = FreeImage_ConvertToGreyscale(final);
+        FreeImage_Unload(final);
+        final = grey;
+
+		final = canny_edge_detection(final, canny_min, canny_max);
 		if(final==NULL) {
 			return false;
 		}

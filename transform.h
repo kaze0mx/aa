@@ -4,8 +4,7 @@
 
 #define MAX_BRIGHTNESS 255
 
-FIBITMAP* canny_edge_detection(FIBITMAP* source, float sigma, int tmin, int tmax);
-FIBITMAP* canny_edge_detection2(FIBITMAP* source, float sigma, int tmin, int tmax);
+FIBITMAP* canny_edge_detection(FIBITMAP* source, int tmin, int tmax);
 
 FIBITMAP* gaussian_filter(FIBITMAP* source, const float sigma);
 FIBITMAP* thinning(FIBITMAP* source);

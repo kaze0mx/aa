@@ -68,7 +68,7 @@ void convolution(const BYTE* in, BYTE* out, const float *kernel,
             int ind = n*pitch+m;
 			pixel_t lu = in[ind];
             if ( m < khalf || m > nx-khalf || n < khalf || n > ny-khalf ) {
-                out[ind] = 0;
+                out[ind] = lu;
             }
             else if(!(lu >=  ignore_min && lu <=  ignore_max)) {
                 float pixel = 0.0;
@@ -308,26 +308,17 @@ void propagate_max(int X, int Y, int pitch, BYTE* buffer)
  * Original implementation: http://www.codeproject.com/Articles/93642/Canny-Edge-Detection-in-C
  * only works with greyscale images
  */
-FIBITMAP* canny_edge_detection2(FIBITMAP* source, float sigma, int MinHysteresisThresh, int MaxHysteresisThresh) 
+FIBITMAP* canny_edge_detection(FIBITMAP* source, int MinHysteresisThresh, int MaxHysteresisThresh) 
 {
+
     int width = FreeImage_GetWidth(source);
 	int height = FreeImage_GetHeight(source);
 	int pitch = FreeImage_GetPitch(source);
     int surface = pitch*height;
 
-	const float thin[] = {0, -1, 1,
-                        0, -1, 1,
-                       0, -1, 1};
-	const float better[] = {0, 0, 0,
-                        0, 4, 0,
-                        0, 0, 0};    
-	
-	if(sigma)
-		source = gaussian_filter(source, sigma);
     BYTE* buffer = FreeImage_GetBits(source);
 	
-	int kn = 2 * (int)(2 * sigma) + 3;
-	int limit = kn/2;
+	int limit = 2;
     int i, j;
 
 #ifdef DEBUG
@@ -481,23 +472,6 @@ FIBITMAP* canny_edge_detection2(FIBITMAP* source, float sigma, int MinHysteresis
     delete[] DerivativeX2;
     delete[] DerivativeY2;
     return source;
-}
-
-/*
- * 
- *
- */
-FIBITMAP* canny_edge_detection(FIBITMAP* source, float sigma, int MinHysteresisThresh, int MaxHysteresisThresh) 
-{
-	int bpp = FreeImage_GetBPP(source);
-    int width = FreeImage_GetWidth(source);
-	
-    bool copied = false;
-    if ( bpp != 8 ) {
-        source = FreeImage_ConvertToGreyscale(source);
-        copied = true;
-    }
-    return canny_edge_detection2(source, sigma, MinHysteresisThresh, MaxHysteresisThresh);	
 }
 
 
