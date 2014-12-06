@@ -348,13 +348,13 @@ BYTE get_best_color(FIBITMAP* paletized, int x, int y) {
 /*
  *
  */
-bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines, int working_height, int translation, float penalty, AaPaletteId palette_id, float sigma, int canny_min, int canny_max) {
+bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines, int working_height, int translation, float penalty, AaPaletteId palette_id, float sigma, int canny_min, int canny_max, float meanshift_r2, float meanshift_d2) {
 	int real_width = FreeImage_GetWidth(image);
 	int real_height = FreeImage_GetHeight(image);
 #ifdef DEBUG
 	GenericWriter(image, "original.png", 0);
 #endif
-	//resize working
+	//resize to working size
 	FIBITMAP* final = NULL;
 	if(working_height) {
 		int height = working_height;
@@ -379,7 +379,7 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
         GenericWriter(final, "gaussed.png", 0);
 #endif    
     }        
-
+    // mean shift filter
     // edge detection
     bool edge_detected = false;
 	if(algorithm >=  AA_ALG_VECTOR_DST && algorithm <=  AA_ALG_VECTOR_11_FILL) {
