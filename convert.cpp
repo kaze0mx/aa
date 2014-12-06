@@ -67,6 +67,7 @@ int main(int argc, char** argv) {
         int skip = 0;
         //num_images = start+100;
         int waiting = 300;
+        bool got_transparent_on_first_frame = false;
         
         sprintf(tmp, "%s.ans", filename);
         FILE* outansi = fopen(tmp, "w");
@@ -78,26 +79,45 @@ int main(int argc, char** argv) {
         for(int i = start, j = 0; i < num_images; i += 1+skip, j++) {
             fprintf(stderr, "** Converting image %d/%d\n", i, num_images);
             FIBITMAP* frame = FreeImage_LockPage(video, i);
+            int width = FreeImage_GetWidth(frame);
+            int height = FreeImage_GetHeight(frame);
+            int pitch = FreeImage_GetPitch(frame);
+            int surface = pitch*height;
+            WORD bpp = FreeImage_GetBPP(frame);
+            bool transparent = FreeImage_IsTransparent(frame);
             if ( previous != NULL ) {
-                int width = FreeImage_GetWidth(frame);
-                int height = FreeImage_GetHeight(frame);
-                int pitch = FreeImage_GetPitch(frame);
-                int surface = pitch*height;
-                WORD bpp = FreeImage_GetBPP(frame);
-                bool transparent = FreeImage_IsTransparent(frame);
                 if ( transparent && bpp == 8 ) {
                     // the transparent color in animated gifs means: use the last bitmap's color
                     BYTE bgcolor = FreeImage_GetTransparentIndex(frame);
                     BYTE* buffer = FreeImage_GetBits(frame);
                     BYTE* prev = FreeImage_GetBits(previous);
                     for ( int i=0; i < surface; i++ ) {
-                         if ( buffer[i] == bgcolor )
-                             buffer[i] = prev[i];
+                         if ( buffer[i] == bgcolor ) {
+                             if( got_transparent_on_first_frame )
+                                 buffer[i] = 0;
+                             else
+                                 buffer[i] = prev[i];
+                         }
                      }
                 }
             }
+            else {
+                // first frame
+                if ( transparent && bpp == 8 ) {
+                    // the transparent color in animated gifs means: use the last bitmap's color
+                    BYTE bgcolor = FreeImage_GetTransparentIndex(frame);
+                    BYTE* buffer = FreeImage_GetBits(frame);
+                    for ( int i=0; i < surface && !got_transparent_on_first_frame; i++ ) {
+                        if ( buffer[i] == bgcolor ) { 
+                            got_transparent_on_first_frame = true;
+
+                        }
+                    }
+                }
+            }
+                
             AaImage aaimage;
-            aa_convert(frame, AA_ALG_VECTOR_DST, &font, &aaimage, size, 768, DEFAULT_TRANSLATION, DEFAULT_PENALTY, AA_PAL_NONE, DEFAULT_SIGMA, DEFAULT_CANNY_HYS_MIN, DEFAULT_CANNY_HYS_MAX, 0, 0, 0, 0);
+            aa_convert(frame, AA_ALG_VECTOR_DST, &font, &aaimage, size, 768, DEFAULT_TRANSLATION, DEFAULT_PENALTY, AA_PAL_NONE, DEFAULT_SIGMA, DEFAULT_CANNY_HYS_MIN, DEFAULT_CANNY_HYS_MAX);
 
             fprintf(outhtml, "<div id = 'frame_%d' style = 'display:none'>\n", j);
             aa_output_html_mono(&aaimage, outhtml);
