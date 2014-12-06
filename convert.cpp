@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
                 }
             }
             AaImage aaimage;
-            aa_convert(frame, AA_ALG_VECTOR_DST, &font, &aaimage, size, DEFAULT_WORKING_HEIGHT, DEFAULT_TRANSLATION, DEFAULT_PENALTY, AA_PAL_NONE, DEFAULT_SIGMA, DEFAULT_CANNY_HYS_MIN, DEFAULT_CANNY_HYS_MAX);
+            aa_convert(frame, AA_ALG_VECTOR_DST, &font, &aaimage, size, 768, DEFAULT_TRANSLATION, DEFAULT_PENALTY, AA_PAL_NONE, DEFAULT_SIGMA, DEFAULT_CANNY_HYS_MIN, DEFAULT_CANNY_HYS_MAX);
 
             fprintf(outhtml, "<div id = 'frame_%d' style = 'display:none'>\n", j);
             aa_output_html_mono(&aaimage, outhtml);

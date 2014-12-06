@@ -62,7 +62,7 @@ void luv_to_rgb(FIBITMAP* dest, const float* in_luv) {
     int pitch = FreeImage_GetPitch(dest);
     BYTE* out = FreeImage_GetBits(dest);
     WORD bpp = FreeImage_GetBPP(dest);
-    assert(bpp = 24);
+    assert(bpp == 24);
     int     r, g, b;
     double  x, y, z, u_prime, v_prime;
     unsigned int i, j, rgbloc, luvind, rgbind;
@@ -111,8 +111,8 @@ void rgb_to_luv(FIBITMAP* source, float* out_luv) {
     int pitch = FreeImage_GetPitch(source);
     BYTE* in = FreeImage_GetBits(source);
     WORD bpp = FreeImage_GetBPP(source);
-    assert(bpp = 24);
-    double	x, y, z, L0, u_prime, v_prime, constant;
+    assert(bpp == 24);
+    double  x, y, z, L0, u_prime, v_prime, constant;
     unsigned int i, j, rgbloc, luvind, rgbind;
 
     for(j = 0, rgbloc = 0, luvind = 0; j < height; j++, rgbloc+=pitch) {
@@ -125,15 +125,15 @@ void rgb_to_luv(FIBITMAP* source, float* out_luv) {
             if (L0 > luv_Lt)
                 out_luv[luvind] = (float)(116.0 * (pow(L0, 1.0/3.0)) - 16.0);
             else
-                out_luv[luvind]	= (float)(903.3 * L0);
-            constant	= x + 15 * y + 3 * z;
+                out_luv[luvind] = (float)(903.3 * L0);
+            constant    = x + 15 * y + 3 * z;
             if(constant != 0) {
-                u_prime	= (4 * x) / constant;       
+                u_prime = (4 * x) / constant;       
                 v_prime = (9 * y) / constant;
             }
             else {
-                u_prime	= 4.0;		
-                v_prime	= 9.0/15.0;
+                u_prime = 4.0;      
+                v_prime = 9.0/15.0;
             }
             /**compute u* and v* */
             out_luv[luvind+1] = (float) (13 * out_luv[luvind] * (u_prime - luv_Un_prime));
@@ -142,14 +142,129 @@ void rgb_to_luv(FIBITMAP* source, float* out_luv) {
     }
 }
 
+/*
+ * Only works on 24 bpp
+ */
 FIBITMAP* mean_shift_filter(FIBITMAP* source, float radiusr2, float radiusd2) {
-    return NULL;
+    int width = FreeImage_GetWidth(source);
+    int height = FreeImage_GetHeight(source);
+    int pitch = FreeImage_GetPitch(source);
+    BYTE* in = FreeImage_GetBits(source);
+    WORD bpp = FreeImage_GetBPP(source);
+    assert(bpp == 24);
+
+    const int N = 5;
+    const double H = 0.499999f;
+    const float distR0 = 0.0001;
+    const int maxIteration = 3;
+    
+    float* luvVal = new float[width*height*3];
+    float* out_luvVal = new float[width*height*3];
+    rgb_to_luv(source, luvVal);
+
+    float newL = 0.0f, newU = 0.0f, newV = 0.0f;
+    float mL = 0.0f ,  mU = 0.0f, mV = 0.0f;
+    
+    float RadioR=0.0f, distR2 = 0.0f;
+    int wSum = 0, xSum = 0, ySum = 0 ;
+    int i = 0, j = 0, k = 0 , depl = 0;
+    int newX = 0, winX, newY = 0, winY;
+    unsigned int iteration;
+    int center;
+    float dif0, dif1, dif2, dif3, dif4, difS;
+    float avgL, avgU, avgV;
+
+    for(winY = 0; winY < height; winY++) {
+        for(winX = 0; winX < width; winX++) {
+            center = 3*(winY*width+winX);
+            mL = luvVal[center]; 
+            mU = luvVal[center+1]; 
+            mV = luvVal[center+2];
+            newX = winX;       
+            newY = winY;
+            iteration = 0;            
+            distR2 = 10;
+            while(distR2 > distR0 && iteration < maxIteration) {
+                wSum = 0; 
+                newL = 0.0f; 
+                newU = 0.0f; 
+                newV = 0.0f;
+                xSum = 0; 
+                ySum = 0;
+                for(i = -N; i < N; i++) {
+                    k = newY + i;
+                    if(k<0 || k>= height) 
+                        continue;
+                    depl = k*width;
+                    for(j = -N; j < N; j++) {
+                        k = newX + j;
+                        if(k<0 || k>= width) 
+                            continue;
+                        k += depl;
+
+                        difS=(i*i + j*j)/(radiusd2*radiusd2);
+                        if(difS < 1.0f) {
+                            dif0 = luvVal[3*k] - mL;
+                            if(dif0 < 0.0f) 
+                                dif0 = -1*dif0;
+
+                            dif1 = luvVal[3*k+1] - mU;                
+                            dif2 = luvVal[3*k+2] - mV;
+                            RadioR = (dif0*dif0 + dif1*dif1 + dif2*dif2)/(radiusr2*radiusr2);
+
+                            if(RadioR < 1.0f) {
+                                wSum++; xSum+=j; ySum+=i;
+                                newL+=luvVal[3*k]; newU+=luvVal[3*k+1]; newV+=luvVal[3*k+2];
+                            }
+                        }//if-else
+                    } //for j --loop
+                } // for i --loop
+
+                avgL = (float)newL/wSum;         
+                avgU = (float)newU/wSum;         
+                avgV = (float)newV/wSum;
+
+                if(xSum>=0) 
+                    xSum = (int)((float)xSum/wSum + H);
+                else 
+                    xSum = (int)((float)xSum/wSum - H);
+                if(ySum>=0) 
+                    ySum = (int)((float)ySum/wSum + H);
+                else 
+                    ySum = (int)((float)ySum/wSum - H);
+
+                dif0 = avgL - mL;              
+                dif1 = avgU - mU;
+                dif2 = avgV - mV;             
+                dif3 = xSum - newX;
+                dif4 = ySum - newY;
+
+                distR2 = (dif0*dif0 + dif1*dif1 + dif2*dif2)+ (dif3*dif3 + dif4*dif4);
+                distR2 = sqrt(distR2);
+
+                mL=avgL; 
+                mU= avgU; 
+                mV = avgV;
+                newX+= xSum; 
+                newY += ySum;
+                iteration++;
+            }// end while
+            out_luvVal[center] = mL;           
+            out_luvVal[center+1] = mU;    
+            out_luvVal[center+2] = mV;
+        }//for--loop
+    }//for--loop
+    luv_to_rgb(source, out_luvVal);
+    delete[] luvVal;
+    delete[] out_luvVal;
+    return source;
 }
 
 /*
  * http://rosettacode.org/wiki/Canny_edge_detector
+ * if normalize is true, map pixels to range 0..MAX_BRIGHTNESS
+ * only works on 8bpp
  */
-// if normalize is true, map pixels to range 0..MAX_BRIGHTNESS
 void convolution(const BYTE* in, BYTE* out, const float *kernel,
                  const int nx, const int ny, const int pitch, int kn,
                  const bool normalize, int ignore_min, int ignore_max)
@@ -184,10 +299,10 @@ void convolution(const BYTE* in, BYTE* out, const float *kernel,
         for (int n = 0; n < ny; n++) {
             int ind = n*pitch+m;
             pixel_t lu = in[ind];
-            if ( m < khalf || m > nx-khalf || n < khalf || n > ny-khalf ) {
+            if ( m < khalf || m > nx-khalf-1 || n < khalf || n > ny-khalf-1 ) {
                 out[ind] = lu;
             }
-            else if(!(lu >=  ignore_min && lu <=  ignore_max)) {
+            else if(!(lu >= ignore_min && lu <= ignore_max)) {
                 float pixel = 0.0;
                 size_t c = 0;
                 for (int j = -khalf; j <=  khalf; j++)
@@ -571,7 +686,6 @@ FIBITMAP* canny_edge_detection(FIBITMAP* source, int MinHysteresisThresh, int Ma
     DebugWriter(clone, "GNH.png");
     FreeImage_Unload(clone);
 #endif  
-
     for (i = 0; i < surface; i++) {
         if(buffer[i]==3)
             buffer[i] = MAX_BRIGHTNESS;

@@ -351,6 +351,7 @@ BYTE get_best_color(FIBITMAP* paletized, int x, int y) {
 bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines, int working_height, int translation, float penalty, AaPaletteId palette_id, float sigma, int canny_min, int canny_max, float meanshift_r2, float meanshift_d2) {
 	int real_width = FreeImage_GetWidth(image);
 	int real_height = FreeImage_GetHeight(image);
+    int real_bpp = FreeImage_GetBPP(image);
 #ifdef DEBUG
 	GenericWriter(image, "original.png", 0);
 #endif
@@ -370,16 +371,21 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 	}
 	if(final==NULL) {
 		return false;
-	}
-    // gaussian blur
-    if(sigma) {
-		final = gaussian_filter(final, sigma);
-#ifdef DEBUG
-        fprintf(stderr, "Smoothed image\n");
-        GenericWriter(final, "gaussed.png", 0);
-#endif    
-    }        
+	}     
+    int working_width = FreeImage_GetWidth(final);
     // mean shift filter
+    if(meanshift_r2 && meanshift_d2) {
+        if ( real_bpp != 24 ) {
+            FIBITMAP* rgb = FreeImage_ConvertTo24Bits(final);
+            FreeImage_Unload(final);
+            final = rgb;
+        }
+        final = mean_shift_filter(final, meanshift_r2, meanshift_d2);
+#ifdef DEBUG
+        fprintf(stderr, "Mean-shifted image\n");
+        GenericWriter(final, "meanshift.png", 0);
+#endif    
+    }
     // edge detection
     bool edge_detected = false;
 	if(algorithm >=  AA_ALG_VECTOR_DST && algorithm <=  AA_ALG_VECTOR_11_FILL) {
@@ -398,9 +404,18 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 			return false;
 		}
 #ifdef DEBUG
+		fprintf(stderr, "Blurring out small differences");
 		GenericWriter(final, "edges.png", 0);
 #endif 
-        final = gaussian_filter(final, 0.7);
+        float postsigma;
+        if ( working_width <= 128 )
+            postsigma = 0.1;
+        else if ( working_width <= 512 )
+            postsigma = 0.3;
+        else
+            postsigma = 0.6;
+        if ( postsigma )
+            final = gaussian_filter(final, postsigma);
 		final = threshold(final, 1);
 #ifdef DEBUG
 		GenericWriter(final, "edges_gaussed.png", 0);
