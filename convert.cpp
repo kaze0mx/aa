@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
             exit(1);
         }
     }
-    unsigned int working_height = 256 + (quality+1)*256;
+    unsigned int working_height = 256 + ((quality+1)/2)*256;
     unsigned int canny_min = quality > 2?DEFAULT_CANNY_HYS_MIN:0;   // no low-match propagation when quality < 4
     unsigned int canny_max = DEFAULT_CANNY_HYS_MAX;
     unsigned int ascii_translation = quality > 3?1:0;
@@ -49,8 +49,8 @@ int main(int argc, char** argv) {
     unsigned int prefilter_gauss_sigma = quality > 2?DEFAULT_SIGMA:0;
     unsigned int meanshift_r2 = quality > 5?DEFAULT_MEANSHIFT_R2:0;
     unsigned int meanshift_d2 = quality > 5?DEFAULT_MEANSHIFT_D2:0;
-    unsigned int meanshift_n = quality > 5?2+(quality-6):0;
-    unsigned int meanshift_iterations = quality > 5?2+(quality-6):0;
+    unsigned int meanshift_n = quality > 5?2+(quality-6)*1.5:0;
+    unsigned int meanshift_iterations = quality > 5?2+(quality-6)*1.5:0;
     const char* alphabet = FONT_SUBSET;
     if ( quality == 0 )
         alphabet = FONT_TINY_SUBSET;
@@ -162,8 +162,6 @@ int main(int argc, char** argv) {
             FreeImage_UnlockPage(video, frame, false);
             fflush(outansi);
             fflush(outhtml);
-            fprintf(stderr, "HTML output written to %s.html\n", filename);
-            fprintf(stderr, "ANS output written to %s.ans\n", filename);
         }
         if ( previous != NULL )
             FreeImage_Unload(previous);
@@ -171,6 +169,8 @@ int main(int argc, char** argv) {
         fprintf(outhtml, "%s", video_html_post);
         fclose(outansi);
         fclose(outhtml);
+        fprintf(stderr, "HTML output written to %s.html\n", filename);
+        fprintf(stderr, "ANS output written to %s.ans\n", filename);
     }
     return 0;
 }

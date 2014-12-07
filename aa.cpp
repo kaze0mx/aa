@@ -8,7 +8,6 @@
 
 #define PALETTE_MAX_SIZE 256
 
-
 BYTE font_consola[] = "" 
 #include "consola.h"
 ;
@@ -387,7 +386,7 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 #endif    
     }
     // use a soft blur to erase small differences (fast)
-    else if(sigma) {
+    if(sigma) {
         FIBITMAP* grey = FreeImage_ConvertToGreyscale(final);
         FreeImage_Unload(final);
         final = gaussian_filter(grey, sigma);
