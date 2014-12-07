@@ -641,7 +641,7 @@ FIBITMAP* canny_edge_detection(FIBITMAP* source, int MinHysteresisThresh, int Ma
             GNH[i] = 255;
 #endif
         }
-        else if ((NonMax[i] < MaxHysteresisThresh) && (NonMax[i] >=  MinHysteresisThresh)) {
+        else if (MinHysteresisThresh && (NonMax[i] < MaxHysteresisThresh) && (NonMax[i] >=  MinHysteresisThresh)) {
             buffer[i] = 1;  //low
 #ifdef DEBUG
             GNL[i] = 255;
@@ -656,12 +656,14 @@ FIBITMAP* canny_edge_detection(FIBITMAP* source, int MinHysteresisThresh, int Ma
 #endif      
 
     //keep only low-edges connected to high edges
-    for (i = limit; i <=  (width - 1) - limit; i++) {
-        for (j = limit; j <=  (height  - 1) - limit; j++) {
-            int ind = i+j*pitch;
-            if(buffer[ind] == 2) {
-                buffer[ind] = 3;
-                propagate_max(i, j, pitch, buffer);
+    if ( MinHysteresisThresh ) {
+        for (i = limit; i <=  (width - 1) - limit; i++) {
+            for (j = limit; j <=  (height  - 1) - limit; j++) {
+                int ind = i+j*pitch;
+                if(buffer[ind] == 2) {
+                    buffer[ind] = 3;
+                    propagate_max(i, j, pitch, buffer);
+                }
             }
         }
     }

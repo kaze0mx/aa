@@ -4,8 +4,9 @@
 //#define DEBUG 
 #define FONT_FILE "fnt.png"
 #define FONT_CARMAP " ²$^¨°+*#&é\"'`|[]{}~(-_à)=123456789azertyuiopqsdfghjklm<wxcvbn,;:!AZERTYUIOPQSDFGHJKLM%µ>WXC@VBN?.\\/§%"
+#define FONT_MEGA_SUBSET " $^+*#&\"'`|[]{}~(-_à)=123456789azertyuiopqsdfghjklm<wxcvbn,;:!AZERTYUIOPQSDFGHJKLM%>WXC@VBN?.\\/%"
 #define FONT_SUBSET " $^+*#&\"'|~(-)=345atiopqdfghjkl<,:AZTYJL%>X@VN?.\\/_"
-//#define FONT_SUBSET " $#.o"
+#define FONT_TINY_SUBSET " .o@/\\_'yT)(,-bd"
 
 #define PASX 8
 #define PASY 16
@@ -15,7 +16,7 @@
 #define DEFAULT_MEANSHIFT_N 5
 #define DEFAULT_MEANSHIFT_ITERATIONS 4
 #define DEFAULT_SIGMA 0.2
-#define DEFAULT_CANNY_HYS_MIN 30
+#define DEFAULT_CANNY_HYS_MIN 40
 #define DEFAULT_CANNY_HYS_MAX 50
 #define DEFAULT_PENALTY 0.65
 #define DEFAULT_TRANSLATION 2
