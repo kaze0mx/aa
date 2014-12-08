@@ -128,7 +128,18 @@ bool aa_init_font(FIBITMAP* font, const char* font_carmap, const char* subset, A
 }
 
 bool aa_init_font_default(AaFontId id, const char* subset, AaFont* res) {
-    FIBITMAP* myfont = aa_load_memory(font_consola, sizeof(font_consola)-1);
+    FIBITMAP* myfont = NULL;
+    switch(id) {
+        case AA_FT_CONSOLA:
+            myfont = aa_load_memory(font_consola, sizeof(font_consola)-1);
+            break;
+        case AA_FT_LUCIDA:
+            myfont = aa_load_memory(font_lucon, sizeof(font_consola)-1);
+            break;
+        case AA_FT_COURIER:
+            myfont = aa_load_memory(font_cour, sizeof(font_consola)-1);
+            break;
+    }
     if(myfont==NULL) {
         fprintf(stderr, "Could not open font file");
         return false;

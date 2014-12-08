@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
     }
 
     AaFont font;
-    if(!aa_init_font_default(AA_FT_CONSOLA, alphabet, &font)) {
+    if(!aa_init_font_default(AA_FT_COURIER, alphabet, &font)) {
 		fprintf(stderr, "Could not initialize font\n");
 		exit(1); 
 	}
