@@ -20,7 +20,7 @@ class AA:
         if sys.platform.startswith("win32"):
             if not executable_name.endswith(".exe"):
                 executable_name+=".exe"
-        self.progname = os.path.join(os.path.dirname(__file__), executable_name)
+        self.progname = os.path.abspath(os.path.join(os.path.dirname(__file__), executable_name))
         if not os.path.exists(self.progname):
             raise ValueError("Could not find program %s" % (self.progname,))
 
@@ -34,7 +34,7 @@ class AA:
             raise IOError("Cannot open file %s" % (fn,))
         cline = [self.progname, fn, str(num_lignes), str(quality)]
         try:
-            self.last_img = subprocess.check_output(cline)
+            self.last_img = "\n".join(subprocess.check_output(cline).splitlines())
         except Exception,e:
             return str(e)
         return self.last_img
@@ -120,12 +120,12 @@ if __name__=="__main__":
     fygletfont = None
     if options.isgoogle or options.isgoogleclipart:
         url = get_img_google(what, clipart=options.isgoogleclipart)
-        print "Image originale: %s" % url
+        print "Image originale: %s\n" % url
         what = url
         options.isurl=True
     elif options.isopenclipart:
         url = get_img_openclipart(what)
-        print "Image originale: %s" % url
+        print "Image originale: %s\n" % url
         what = url
         options.isurl = True        
 
