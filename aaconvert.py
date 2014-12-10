@@ -2,7 +2,7 @@
 # -*- coding: utf8 -*-
 import sys,random,re,cgi
 import urllib
-import simplejson
+import json
 import base64
 import random
 import sys
@@ -68,8 +68,8 @@ def get_img_openclipart(what):
     query = urllib.urlencode({"query" : what, "page":"1"})
     url = "http://openclipart.org/search/json/?%s" % (query)
     search_results = urllib.urlopen(url)
-    json = simplejson.loads(search_results.read())
-    r=json["payload"][0]
+    jjson = json.loads(search_results.read())
+    r=jjson["payload"][0]
     #r=random.choice(json["responseData"]["results"][0])
     u=r["svg"]["png_thumb"]
     return u
@@ -88,8 +88,8 @@ def get_img_google(what, clipart=True):
     query = urllib.urlencode(params)
     url = "http://ajax.googleapis.com/ajax/services/search/images?v=1.0&%s" % (query)
     search_results = urllib.urlopen(url)
-    json = simplejson.loads(search_results.read())
-    r=json["responseData"]["results"][0]
+    jjson = json.loads(search_results.read())
+    r=jjson["responseData"]["results"][0]
     #r=random.choice(json["responseData"]["results"][0])
     u=r["url"]
     return u
