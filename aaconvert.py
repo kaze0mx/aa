@@ -16,23 +16,25 @@ import tempfile
 
 
 class AA:
-    def __init__(self, executable_name="aaconvert"):
-        if sys.platform.startswith("win32"):
-            if not executable_name.endswith(".exe"):
-                executable_name+=".exe"
-        self.progname = os.path.abspath(os.path.join(os.path.dirname(__file__), executable_name))
+    def __init__(self, executable_path=None):
+        if executable_path is None:
+            if sys.platform.startswith("win32"):
+                executable_path = os.path.join(os.path.dirname(__file__), "aaconvert.exe")
+            else:
+                executable_path = os.path.join(os.path.dirname(__file__), "aaconvert")
+        self.progname = os.path.abspath(executable_path)
         if not os.path.exists(self.progname):
             raise ValueError("Could not find program %s" % (self.progname,))
 
 
 
-    def dessine(self, fn, num_lignes=25, quality=5):
+    def dessine(self, fn, num_lignes=25, quality=5, mode="i"):
         """
         Lis l'image depuis le fichier <fn>, la convertit en ascii art et retourne le texte ascii
         """
         if not os.path.exists(fn):
             raise IOError("Cannot open file %s" % (fn,))
-        cline = [self.progname, fn, str(num_lignes), str(quality)]
+        cline = [self.progname, fn, str(num_lignes), str(quality), mode]
         try:
             self.last_img = "\n".join(subprocess.check_output(cline).splitlines())
         except Exception,e:
@@ -109,6 +111,7 @@ if __name__=="__main__":
     parser.add_option('-s', '--size', dest='size', action="store", type=int, default=25, help='Height of the ascii art in characters (default is 25)')
     parser.add_option('-q', '--quality', dest='quality', action="store", type=int, default=5, help='Quality of the ascii translation (0-10). Default to 5.')
     parser.add_option('-t', '--font', dest='font', default="", help='font name to use for pyfiglet')
+    parser.add_option('-m', '--mode', dest='mode', default="i", help='mode: i = image, j = json (video-enabled), h = html(video enabled), a = ansii (video-enabled)')
     (options, args) = parser.parse_args()
     if len(args) != 1:
         parser.error('Incorrect number of arguments')
@@ -127,20 +130,20 @@ if __name__=="__main__":
         url = get_img_openclipart(what)
         print "Image originale: %s\n" % url
         what = url
-        options.isurl = True        
+        options.isurl = True
 
     if options.isfyglet:
         print aa.fyglet(fyglettext,fygletfont)
     elif options.isurl:
         fname = tempfile.mktemp("aaconvert")
         with open(fname, "wb") as f:
-            f.write(urllib.urlopen(url).read())
+            f.write(urllib.urlopen(what).read())
         try:
-            print aa.dessine(fname, options.size, options.quality)
+            print aa.dessine(fname, options.size, options.quality, options.mode)
         finally:
             os.remove(fname)
     elif options.isfile:
-        print aa.dessine(what, options.size, options.quality)
+        print aa.dessine(what, options.size, options.quality, options.mode)
 
 
 

@@ -1,6 +1,6 @@
 
-CC=g++ -O9
-LNK=g++
+CC=g++ -g
+LNK=g++ -g
 
 FreeImage=.
 

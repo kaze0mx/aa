@@ -397,7 +397,7 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 #endif    
     }
     // use a soft blur to erase small differences (fast)
-    if(sigma) {
+    else if(sigma) {
         FIBITMAP* grey = FreeImage_ConvertToGreyscale(final);
         FreeImage_Unload(final);
         final = gaussian_filter(grey, sigma);
@@ -671,10 +671,10 @@ bool aa_output_html(AaImage* image, FILE* out, bool palette) {
                 if(lastcolor!=-1)
                     fprintf(out, "</span>");
                 if(palette) {
-                    fprintf(out, "<span class = 'c%d'>", color);
+                    fprintf(out, "<span class='c%d'>", color);
                 }
                 else {
-                    fprintf(out, "<span style = 'color:rgb(%d, %d, %d)'>", image->palette->raw[color].rgbRed, image->palette->raw[color].rgbGreen, image->palette->raw[color].rgbBlue);
+                    fprintf(out, "<span style = 'color:rgb(%d,%d,%d)'>", image->palette->raw[color].rgbRed, image->palette->raw[color].rgbGreen, image->palette->raw[color].rgbBlue);
                 }
                 lastcolor = *coul;
             }

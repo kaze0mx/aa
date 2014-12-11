@@ -13,9 +13,10 @@ const char* video_html_post = ""
 ;
 
 
+
 int main(int argc, char** argv) {
 	if(argc < 2)  {
-		fprintf(stderr, "Usage: %s <image_path> [num_ascii_lines] [quality 0-10]\n", argv[0]);
+		fprintf(stderr, "Usage: %s <image_path> [num_ascii_lines] [quality 0-10] [mode (i,j,h or v)]\n", argv[0]);
 		exit(1);
 	} 
 	char* filename = argv[1];
@@ -31,13 +32,21 @@ int main(int argc, char** argv) {
     // parameters
     unsigned int ascii_num_lines = 25;
     unsigned int quality = 5;
-    if(argc>= 3) {
+    unsigned char mode = 'i';   // i = image, j = json (video-enabled), h = html(video enabled), a = ansii (video-enabled)
+    if(argc >= 3) {
         ascii_num_lines = strtol(argv[2], NULL, 10);
     }
-    if(argc>= 4) {
+    if(argc >= 4) {
         quality = strtol(argv[3], NULL, 10);
         if(quality > 10) {
-            fprintf(stderr, "Quality parameter mut be between 0 and 10");
+            fprintf(stderr, "Quality parameter must be between 0 and 10\n");
+            exit(1);
+        }
+    }
+    if(argc >= 5) {
+        mode = argv[4][0];
+        if ( mode != 'i' && mode != 'a' && mode != 'j' && mode != 'h' ) {
+            fprintf(stderr, "Mode parameter must be i, j, h or v\n");
             exit(1);
         }
     }
@@ -80,14 +89,14 @@ int main(int argc, char** argv) {
     
     int num_images = FreeImage_GetPageCount(video);
     
-    if ( num_images == 1 ) {
+    if ( mode == 'i' ) {
         // Convert single image and output to stdout
         AaImage aaimage;
         aa_convert(image, AA_ALG_VECTOR_DST, &font, &aaimage, ascii_num_lines, working_height, ascii_translation, ascii_black_white_penalty_ratio, AA_PAL_NONE, prefilter_gauss_sigma, canny_min, canny_max, meanshift_r2, meanshift_d2, meanshift_n, meanshift_iterations);
         aa_output_ascii(&aaimage, stdout);
         aa_unload(&aaimage);
     }
-    else {
+    else {  
         char tmp[1024];
         // create video in filename.ans and filename.html
         int start = 0;
@@ -96,16 +105,23 @@ int main(int argc, char** argv) {
         int waiting = 300;
         bool got_transparent_on_first_frame = false;
         
-        sprintf(tmp, "%s.ans", filename);
-        FILE* outansi = fopen(tmp, "w");
-        sprintf(tmp, "%s.html", filename);
-        FILE* outhtml = fopen(tmp, "w");
-        fprintf(outansi, "\x1b[2J\x1b[1;1H\x1b[?25l");
-        fprintf(outhtml, "%s", video_html_pre);
+        AaPaletteId palette_id = AA_PAL_NONE;
+        if ( mode == 'a' ) {
+            printf("\x1b[2J\x1b[1;1H\x1b[?25l");
+            palette_id = AA_PAL_ANSI_16;
+        }
+        else if ( mode == 'h' ) {
+            printf("%s", video_html_pre);
+            palette_id = AA_PAL_FREE_64;
+        }
         FIBITMAP* previous = NULL;
         for(int i = start, j = 0; i < num_images; i += 1+skip, j++) {
             fprintf(stderr, "Converting image %d/%d ...\n", i, num_images);
-            FIBITMAP* frame = FreeImage_LockPage(video, i);
+            FIBITMAP* frame;
+            if ( num_images > 1 )
+                frame = FreeImage_LockPage(video, i);
+            else
+                frame = image;
             int width = FreeImage_GetWidth(frame);
             int height = FreeImage_GetHeight(frame);
             int pitch = FreeImage_GetPitch(frame);
@@ -144,33 +160,38 @@ int main(int argc, char** argv) {
             }
                 
             AaImage aaimage;
-            aa_convert(frame, AA_ALG_VECTOR_DST, &font, &aaimage, ascii_num_lines, working_height, ascii_translation, ascii_black_white_penalty_ratio, AA_PAL_NONE, prefilter_gauss_sigma, canny_min, canny_max, meanshift_r2, meanshift_d2, meanshift_n, meanshift_iterations);
-
-            fprintf(outhtml, "<div id = 'frame_%d' style = 'display:none'>\n", j);
-            aa_output_html_mono(&aaimage, outhtml);
-            fprintf(outhtml, "</div>\n");
-
-            aa_output_ansi16(&aaimage, outansi);
-            fprintf(outansi, "\x1b[1;1H");
-            for(int k = 0;k<waiting;k++) {
-                fprintf(outansi, "\x1b[1H");
+            if ( !aa_convert(frame, AA_ALG_VECTOR_DST, &font, &aaimage, ascii_num_lines, working_height, ascii_translation, ascii_black_white_penalty_ratio, palette_id, prefilter_gauss_sigma, canny_min, canny_max, meanshift_r2, meanshift_d2, meanshift_n, meanshift_iterations) ) {
+                fprintf(stderr, "Could not convert image\n");
+                exit(2);
             }
+
+            if ( mode == 'h' ) {
+                printf("<div id = 'frame_%d' style = 'display:none'>\n", j);
+                aa_output_html(&aaimage, stdout, false);
+                printf("</div>\n");
+            }
+            else if ( mode == 'a' ) {
+                aa_output_ansi16(&aaimage, stdout);
+                printf("\x1b[1;1H");
+                for(int k = 0;k<waiting;k++) {
+                    printf("\x1b[1H");
+                }
+            }
+
             if ( previous != NULL )
                 FreeImage_Unload(previous);
-            previous = FreeImage_Clone(frame);
             aa_unload(&aaimage);
-            FreeImage_UnlockPage(video, frame, false);
-            fflush(outansi);
-            fflush(outhtml);
+            if ( num_images > 1 ) {
+                previous = FreeImage_Clone(frame);
+                FreeImage_UnlockPage(video, frame, false);
+            }
         }
         if ( previous != NULL )
             FreeImage_Unload(previous);
-        fprintf(outansi, "\x1b[?25h");
-        fprintf(outhtml, "%s", video_html_post);
-        fclose(outansi);
-        fclose(outhtml);
-        fprintf(stderr, "HTML output written to %s.html\n", filename);
-        fprintf(stderr, "ANS output written to %s.ans\n", filename);
+        if ( mode == 'a' )
+            printf("\x1b[?25h");
+        else if ( mode == 'v' )
+            printf("%s", video_html_post);
     }
     return 0;
 }
