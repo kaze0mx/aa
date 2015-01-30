@@ -28,7 +28,7 @@
 
 
 #ifdef linux
-#define MYEXPORT extern
+#define MYEXPORT extern "C"
 #else
 #define MYEXPORT extern "C" __declspec(dllexport)
 #endif

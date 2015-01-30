@@ -9,10 +9,10 @@ OBJS=transform.o aa.o
 all: aaconvert aa.so 
 
 %.o: %.cpp %.h 
-	$(CC) -I. -c -fpic $< -o $@
+	$(CC) -I. -c -fPIC $< -o $@
 
 %.o: %.cpp 
-	$(CC) -I. -c -fpic $< -o $@
+	$(CC) -I. -c -fPIC $< -o $@
 
 convert.o: convert.cpp video_pre.h video_post.h aa.h 
 	$(CC) -I. -c $< -o $@
