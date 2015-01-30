@@ -6,19 +6,23 @@ FreeImage=/usr/lib
 
 OBJS=transform.o aa.o
 
-all: aaconvert
+all: aaconvert aa.so 
 
 %.o: %.cpp %.h 
-	$(CC) -I. -c $< -o $@
+	$(CC) -I. -c -fpic $< -o $@
 
 %.o: %.cpp 
-	$(CC) -I. -c $< -o $@
+	$(CC) -I. -c -fpic $< -o $@
 
 convert.o: convert.cpp video_pre.h video_post.h aa.h 
 	$(CC) -I. -c $< -o $@
 
+
 aaconvert: $(OBJS) convert.o
 	$(LNK) -static-libstdc++ -static-libgcc -o $@ -L$(FreeImage) $(OBJS) convert.o -lfreeimage 
+
+aa.so: $(OBJS)
+	$(LNK) -static-libstdc++ -static-libgcc -shared -o $@ -L$(FreeImage) $(OBJS) -lfreeimage 
 
 
 video_pre.h: video_pre.html

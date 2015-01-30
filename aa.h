@@ -27,6 +27,13 @@
 #define DEFAULT_ALGORITHM AA_ALG_VECTOR_DST
 
 
+#ifdef linux
+#define MYEXPORT extern
+#else
+#define MYEXPORT extern "C" __declspec(dllexport)
+#endif
+
+
 typedef enum {AA_FT_COURIER, AA_FT_LUCIDA, AA_FT_CONSOLA} AaFontId;
 typedef enum {AA_PAL_NONE, AA_PAL_MONOCHROME, AA_PAL_ANSI_16, AA_PAL_FREE_MONO, AA_PAL_FREE_16, AA_PAL_FREE_64, AA_PAL_FREE_256, AA_PAL_MAX} AaPaletteId;
 typedef enum {AA_ALG_PIXEL_11, AA_ALG_VECTOR_DST, AA_ALG_VECTOR_DST_FILL, AA_ALG_VECTOR_11, AA_ALG_VECTOR_11_FILL, AA_ALG_MAX} AaAlgorithmId;
@@ -65,15 +72,17 @@ typedef struct {
 
 
 
-bool aa_init_font_default(AaFontId id, const char* subset, AaFont* res);
-bool aa_init_font_from_picture(const char* font_picture_path, const char* font_carmap, const char* subset, AaFont* res);
+MYEXPORT bool aa_init_font_default(AaFontId id, const char* subset, AaFont* res);
+MYEXPORT bool aa_init_font_from_picture(const char* font_picture_path, const char* font_carmap, const char* subset, AaFont* res);
 
-bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines = DEFAULT_LINES, int working_height = DEFAULT_WORKING_HEIGHT, int translation = DEFAULT_TRANSLATION, float penalty = DEFAULT_PENALTY, AaPaletteId palette_id = DEFAULT_PALETTEID, float sigma = DEFAULT_SIGMA, int canny_min = DEFAULT_CANNY_HYS_MIN, int canny_max = DEFAULT_CANNY_HYS_MAX, float meanshift_r2 = DEFAULT_MEANSHIFT_R2, float meanshift_d2 = DEFAULT_MEANSHIFT_D2, int meanshift_n = DEFAULT_MEANSHIFT_N, int meanshift_iterations = DEFAULT_MEANSHIFT_ITERATIONS);
+MYEXPORT bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines = DEFAULT_LINES, int working_height = DEFAULT_WORKING_HEIGHT, int translation = DEFAULT_TRANSLATION, float penalty = DEFAULT_PENALTY, AaPaletteId palette_id = DEFAULT_PALETTEID, float sigma = DEFAULT_SIGMA, int canny_min = DEFAULT_CANNY_HYS_MIN, int canny_max = DEFAULT_CANNY_HYS_MAX, float meanshift_r2 = DEFAULT_MEANSHIFT_R2, float meanshift_d2 = DEFAULT_MEANSHIFT_D2, int meanshift_n = DEFAULT_MEANSHIFT_N, int meanshift_iterations = DEFAULT_MEANSHIFT_ITERATIONS);
 
-FIMULTIBITMAP* aa_load_animated_file(const char* path);
-FIBITMAP* aa_load_file(const char* path);
-FIBITMAP* aa_load_memory(BYTE* data, unsigned int size);
-bool aa_unload(AaImage* image);
+MYEXPORT FIMULTIBITMAP* aa_load_animated_file(const char* path);
+MYEXPORT FIBITMAP* aa_load_file(const char* path);
+MYEXPORT FIBITMAP* aa_load_memory(BYTE* data, unsigned int size);
+
+MYEXPORT bool aa_unload(AaImage* image);
+
 
 bool aa_output_ascii(AaImage* image, FILE* out);
 bool aa_output_ansi16(AaImage* image, FILE* out);
