@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
 	char* filename = argv[1];
     bool res;
 	
-    FIBITMAP* image = aa_load_file(argv[1]);
+    FIBITMAP* image = aa_load_bitmap_from_file(argv[1]);
     FREE_IMAGE_TYPE type = FreeImage_GetImageType(image);
     if(image==NULL) {
 		fprintf(stderr, "Could not open image\n");
@@ -94,7 +94,8 @@ int main(int argc, char** argv) {
         AaImage aaimage;
         aa_convert(image, AA_ALG_VECTOR_DST, &font, &aaimage, ascii_num_lines, working_height, ascii_translation, ascii_black_white_penalty_ratio, AA_PAL_NONE, prefilter_gauss_sigma, canny_min, canny_max, meanshift_r2, meanshift_d2, meanshift_n, meanshift_iterations);
         aa_output_ascii(&aaimage, stdout);
-        aa_unload(&aaimage);
+        aa_dispose(&aaimage);
+        aa_unload_bitmap(image);
     }
     else {  
         char tmp[1024];
@@ -180,7 +181,7 @@ int main(int argc, char** argv) {
 
             if ( previous != NULL )
                 FreeImage_Unload(previous);
-            aa_unload(&aaimage);
+            aa_dispose(&aaimage);
             if ( num_images > 1 ) {
                 previous = FreeImage_Clone(frame);
                 FreeImage_UnlockPage(video, frame, false);

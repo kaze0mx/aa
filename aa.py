@@ -229,13 +229,21 @@ class AaConverter:
         self.__init_font_default.argtypes = [c_int, c_char_p, POINTER(AaFont)]
         self.__init_font_default.restype = c_bool     
 
-        self.__load_file = dll.aa_load_file
-        self.__load_file.argtypes = [c_char_p]
-        self.__load_file.restype = c_void_p    
+        self.__load_bitmap_from_file = dll.aa_load_bitmap_from_file
+        self.__load_bitmap_from_file.argtypes = [c_char_p]
+        self.__load_bitmap_from_file.restype = c_void_p    
 
-        self.__load_memory = dll.aa_load_memory
-        self.__load_memory.argtypes = [POINTER(c_byte), c_int]
-        self.__load_memory.restype = c_void_p    
+        self.__load_bitmap_from_memory = dll.aa_load_bitmap_from_memory
+        self.__load_bitmap_from_memory.argtypes = [POINTER(c_byte), c_int]
+        self.__load_bitmap_from_memory.restype = c_void_p    
+
+        self.__unload_bitmap = dll.aa_unload_bitmap
+        self.__unload_bitmap.argtypes = [c_void_p,]
+        self.__unload_bitmap.restype = c_bool   
+
+        self.__dispose = dll.aa_dispose
+        self.__dispose.argtypes = [POINTER(AaInternalImage),]
+        self.__dispose.restype = c_bool
 
         self.__convert = dll.aa_convert
         self.__convert.argtypes = [c_void_p, c_int, POINTER(AaFont), POINTER(AaInternalImage), c_int, c_int, 
@@ -263,7 +271,7 @@ class AaConverter:
             self.last_subset = params.font_subset
 
         buff = (c_byte * len(inputimage.data)).from_buffer_copy(inputimage.data)
-        image = self.__load_memory(buff, len(inputimage.data))
+        image = self.__load_bitmap_from_memory(buff, len(inputimage.data))
         if not image:
             raise ValueError("Could not parse image data")
 
@@ -273,6 +281,8 @@ class AaConverter:
                 params.color_palette, params.gauss_sigma, params.canny_min, params.canny_max,
                 params.meanshift_r2, params.meanshift_d2, params.meanshift_n, params.meanshift_iterations):
             raise ValueError("Could not convert image")
+        #self.__dispose(byref(res))
+        self.__unload_bitmap(image)
         return AaImage(res.cols, res.lines, res.characters)
 
         
@@ -281,5 +291,5 @@ class AaConverter:
 if __name__ == "__main__":
 
     aa = AaConverter()
-    print aa.convert(InputImage.from_open_clipart(sys.argv[1]), lines=15, params=ConvertParameters.optimize(int(sys.argv[2])))
+    print aa.convert(InputImage.from_google_clipart(sys.argv[1]), lines=15, params=ConvertParameters.optimize(int(sys.argv[2])))
     

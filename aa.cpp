@@ -131,13 +131,13 @@ bool aa_init_font_default(AaFontId id, const char* subset, AaFont* res) {
     FIBITMAP* myfont = NULL;
     switch(id) {
         case AA_FT_CONSOLA:
-            myfont = aa_load_memory(font_consola, sizeof(font_consola)-1);
+            myfont = aa_load_bitmap_from_memory(font_consola, sizeof(font_consola)-1);
             break;
         case AA_FT_LUCIDA:
-            myfont = aa_load_memory(font_lucon, sizeof(font_consola)-1);
+            myfont = aa_load_bitmap_from_memory(font_lucon, sizeof(font_consola)-1);
             break;
         case AA_FT_COURIER:
-            myfont = aa_load_memory(font_cour, sizeof(font_consola)-1);
+            myfont = aa_load_bitmap_from_memory(font_cour, sizeof(font_consola)-1);
             break;
     }
     if(myfont==NULL) {
@@ -150,7 +150,7 @@ bool aa_init_font_default(AaFontId id, const char* subset, AaFont* res) {
 }
 
 bool aa_init_font_from_picture(const char* font_picture_path, const char* font_carmap, const char* subset, AaFont* res) {
-    FIBITMAP* myfont = aa_load_file(font_picture_path);
+    FIBITMAP* myfont = aa_load_bitmap_from_file(font_picture_path);
     if(myfont==NULL) {
         fprintf(stderr, "Could not open font file");
         return false;
@@ -160,7 +160,7 @@ bool aa_init_font_from_picture(const char* font_picture_path, const char* font_c
     return ret;
 }
 
-bool aa_unload(AaImage* image) {
+bool aa_dispose(AaImage* image) {
     delete[] image->characters;
     delete[] image->colors;
     delete[] image->palette->raw;
@@ -737,7 +737,7 @@ bool aa_output_html_mono(AaImage* image, FILE* out) {
 }
 ///////////////////////////////////////////////////////////////////////////////////////
 
-FIBITMAP* aa_load_memory(BYTE* data, unsigned int size) {
+FIBITMAP* aa_load_bitmap_from_memory(BYTE* data, unsigned int size) {
 	FIBITMAP* res = NULL;
 	FIMEMORY* mem = FreeImage_OpenMemory(data, size);
 	FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
@@ -752,7 +752,7 @@ FIBITMAP* aa_load_memory(BYTE* data, unsigned int size) {
 }
 
 
-FIBITMAP* aa_load_file(const char* path) {
+FIBITMAP* aa_load_bitmap_from_file(const char* path) {
     FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
 	fif = FreeImage_GetFileType(path, 0);
 	if(fif == FIF_UNKNOWN) {
@@ -767,21 +767,6 @@ FIBITMAP* aa_load_file(const char* path) {
 	return NULL;
 }
 
-FIMULTIBITMAP* aa_load_animated_file(const char* path) {
-    FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
-	fif = FreeImage_GetFileType(path, 0);
-	if(fif == FIF_UNKNOWN) {
-		fif = FreeImage_GetFIFFromFilename(path);
-	}
-	if((fif != FIF_UNKNOWN) && FreeImage_FIFSupportsReading(fif)) {
-		FIMULTIBITMAP* dib = FreeImage_OpenMultiBitmap(fif, path, true, true, false, 0);
-        if(dib)
-            return dib;
-	}
-    fprintf(stderr, "Could not open image file");
-	return NULL;
+void aa_unload_bitmap(FIBITMAP* bitmap) {
+    FreeImage_Unload(bitmap);
 }
-
-
-
-
