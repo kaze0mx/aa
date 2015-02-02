@@ -297,6 +297,7 @@ if __name__ == "__main__":
     parser.add_option('-c', '--openclipart', dest='isopenclipart', action="store_true", default=False, help='The command line argument is a openclipart image search')
     parser.add_option('-s', '--size', dest='size', action="store", type=int, default=32, help='Height of the ascii art in characters (default is 32)')
     parser.add_option('-q', '--quality', dest='quality', action="store", type=int, default=5, help='Overall quality for the convertion (0-10), the higher the slower and better')
+    parser.add_option('-a', '--algorithm', dest='algorithm', action="store", default="blocmindist", help='asciisation algorithm to use (blocmindist, bloc11, pixel), defaults to blocmindist')
     (options, args) = parser.parse_args()
     if len(args) < 1:
         parser.error('Incorrect number of arguments')
@@ -304,6 +305,15 @@ if __name__ == "__main__":
 
     aa = AaConverter()
     params = ConvertParameters.optimize(options.quality)
+
+    algorithms_dic = {
+        "blocmindist": AA_ALG_VECTOR_DST,
+        "bloc11": AA_ALG_VECTOR_11,
+        "pixel": AA_ALG_PIXEL_11,
+    }
+    params.ascii_algorithm = algorithms_dic.get(options.algorithm, None)
+    if params.ascii_algorithm is None:
+        parser.error("Unknown algorithm %s" % (repr(options.algorithm),))
 
     inputimage = None
     if options.isfile:
@@ -320,5 +330,7 @@ if __name__ == "__main__":
         inputimage = InputImage.from_google(what)
 
     print "Source:", inputimage.source
+    print aa.convert(inputimage, lines=options.size, params=params)
+    params.ascii_algorithm = AA_ALG_PIXEL_11
     print aa.convert(inputimage, lines=options.size, params=params)
     

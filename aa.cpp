@@ -586,13 +586,15 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
         }
 	}
     else if(algorithm == AA_ALG_PIXEL_11) {
+        FreeImage_Invert(resized);
         BYTE* pixel = FreeImage_GetBits(resized);
         BYTE* pixelc = FreeImage_GetBits(paletized);
         static const char* map = " .:+og@Q";
         for(int y = 0; y < height-1; y++, pixel+= dif_pitch, pixelc+= dif_pitch) {
             for(int x = 0; x < width; x++) {
                 BYTE intensity = *pixel++;
-                *coul++= *pixelc++;
+                if ( palette_id != AA_PAL_NONE) 
+                    *coul++= *pixelc++;
                 *cur++= map[intensity>>5];
             }
         }

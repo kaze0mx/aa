@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
     if ( mode == 'i' ) {
         // Convert single image and output to stdout
         AaImage aaimage;
-        aa_convert(image, AA_ALG_VECTOR_DST, &font, &aaimage, ascii_num_lines, working_height, ascii_translation, ascii_black_white_penalty_ratio, AA_PAL_NONE, prefilter_gauss_sigma, canny_min, canny_max, meanshift_r2, meanshift_d2, meanshift_n, meanshift_iterations);
+        aa_convert(image, AA_ALG_PIXEL_11, &font, &aaimage, ascii_num_lines, working_height, ascii_translation, ascii_black_white_penalty_ratio, AA_PAL_NONE, prefilter_gauss_sigma, canny_min, canny_max, meanshift_r2, meanshift_d2, meanshift_n, meanshift_iterations);
         aa_output_ascii(&aaimage, stdout);
         aa_dispose(&aaimage);
         aa_unload_bitmap(image);
