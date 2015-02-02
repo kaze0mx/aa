@@ -151,7 +151,7 @@ class InputImage:
         opener = urllib.urlopen(url)
         data = opener.read()
         ok = data and opener.getcode() != 404 and len(data) > 100 and not "<html" in data[:100]
-        if not data:
+        if not ok:
             raise ValueError("Could not open image at url %s" % (url,))
         return InputImage(data, source=opener.geturl())
 
@@ -171,9 +171,7 @@ class InputImage:
                 return InputImage.from_url(r["url"])
             except:
                 ok = False
-        if not ok:
-            raise ValueError("Could not get image for search %s" % (search,))
-        return InputImage(data, source=url.geturl())    
+        return None  
 
 
     @staticmethod
@@ -192,9 +190,7 @@ class InputImage:
                 return InputImage.from_url(r["url"])
             except:
                 ok = False
-        if not ok:
-            raise ValueError("Could not get image for search %s" % (search,))
-        return InputImage(data, source=url.geturl())    
+        return None
 
 
     @staticmethod
@@ -213,9 +209,7 @@ class InputImage:
                 return InputImage.from_url(r["svg"]["png_thumb"])
             except:
                 ok = False
-        if not ok:
-            raise ValueError("Could not get image for search %s" % (search,))
-        return InputImage(data, source=url.geturl())  
+        return None  
 
         
     
@@ -325,5 +319,6 @@ if __name__ == "__main__":
     else:
         inputimage = InputImage.from_google(what)
 
-    print aa.convert(inputimage, lines=options.size, )
+    print "Source:", inputimage.source
+    print aa.convert(inputimage, lines=options.size, params=params)
     
