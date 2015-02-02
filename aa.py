@@ -1,4 +1,5 @@
 import os, sys, collections
+import optparse
 from ctypes import *
 import json, urllib
 
@@ -125,7 +126,7 @@ class ConvertParameters:
         p.working_height = 256 + ((quality+1)/2)*256
         p.canny_min = quality > 2 and 40 or 0   # no low-match propagation when quality < 3
         p.pixel_translation = quality > 3 and 1 or 0
-        p.gauss_sigma = quality > 2 and 0.3 or 0
+        p.gauss_sigma = quality > 3 and 0.3 or 0
         p.meanshift_r2 = quality > 5 and 6.5 or 0
         p.meanshift_d2 = quality > 5 and 7.0 or 0
         p.meanshift_n = quality > 5 and int(2+(quality-6)*1.5) or 0
@@ -146,6 +147,15 @@ class InputImage:
             return InputImage(f.read(), source="file://%s" % (path,))
 
     @staticmethod
+    def from_url(url):
+        opener = urllib.urlopen(url)
+        data = opener.read()
+        ok = data and opener.getcode() != 404 and len(data) > 100 and not "<html" in data[:100]
+        if not data:
+            raise ValueError("Could not open image at url %s" % (url,))
+        return InputImage(data, source=opener.geturl())
+
+    @staticmethod
     def from_google_clipart(search):
         query = urllib.urlencode({"q" : search, "googlehost":"google.com","imgtype":"clipart","hl":"fr","isc":"white","isz":"s","safe":"off"})
         url = "http://ajax.googleapis.com/ajax/services/search/images?v=1.0&%s" % (query)
@@ -154,13 +164,11 @@ class InputImage:
         results = jsonobj["responseData"]["results"]
         ok = False
         retries = 0
-        while not ok and retries < 4:
+        while not ok and retries < 4 and results:
             retries +=1
             r = results.pop(0)
             try:
-                url = urllib.urlopen(r["url"])
-                data = url.read()
-                ok = data and url.getcode() != 404 and len(data) > 100 and not "<html" in data[:100]
+                return InputImage.from_url(r["url"])
             except:
                 ok = False
         if not ok:
@@ -177,18 +185,17 @@ class InputImage:
         results = jsonobj["responseData"]["results"]
         ok = False
         retries = 0
-        while not ok and retries < 4:
+        while not ok and retries < 4 and results:
             retries +=1
             r = results.pop(0)
             try:
-                url = urllib.urlopen(r["url"])
-                data = url.read()
-                ok = data and url.getcode() != 404 and len(data) > 100 and not "<html" in data[:100]
+                return InputImage.from_url(r["url"])
             except:
                 ok = False
         if not ok:
             raise ValueError("Could not get image for search %s" % (search,))
         return InputImage(data, source=url.geturl())    
+
 
     @staticmethod
     def from_open_clipart(search):
@@ -199,13 +206,11 @@ class InputImage:
         results = jsonobj["payload"]
         ok = False
         retries = 0
-        while not ok and retries < 4:
+        while not ok and retries < 2 and results:
             retries +=1
             r = results.pop(0)
             try:
-                url = urllib.urlopen(r["svg"]["png_thumb"])
-                data = url.read()
-                ok = data and url.getcode() != 404 and len(data) > 100 and not "<html" in data[:100]
+                return InputImage.from_url(r["svg"]["png_thumb"])
             except:
                 ok = False
         if not ok:
@@ -289,7 +294,36 @@ class AaConverter:
 
 
 if __name__ == "__main__":
+    usage = 'usage: %prog [options] <what>'
+    parser = optparse.OptionParser(usage=usage, description="""Draws an image in compact ascii art""")
+    parser.add_option('-f', '--file', dest='isfile', action="store_true", default=False, help='The command line argument is a filepath')
+    parser.add_option('-u', '--url', dest='isurl', action="store_true", default=False, help='The command line argument is an url')
+    parser.add_option('-g', '--google', dest='isgoogle', action="store_true", default=False, help='The command line argument is a google image search')
+    parser.add_option('-i', '--googleclipart', dest='isgoogleclipart', action="store_true", default=False, help='The command line argument is a google clipart search')
+    parser.add_option('-c', '--openclipart', dest='isopenclipart', action="store_true", default=False, help='The command line argument is a openclipart image search')
+    parser.add_option('-s', '--size', dest='size', action="store", type=int, default=32, help='Height of the ascii art in characters (default is 32)')
+    parser.add_option('-q', '--quality', dest='quality', action="store", type=int, default=5, help='Overall quality for the convertion (0-10), the higher the slower and better')
+    (options, args) = parser.parse_args()
+    if len(args) < 1:
+        parser.error('Incorrect number of arguments')
+    what = " ".join(args)
 
     aa = AaConverter()
-    print aa.convert(InputImage.from_google_clipart(sys.argv[1]), lines=15, params=ConvertParameters.optimize(int(sys.argv[2])))
+    params = ConvertParameters.optimize(options.quality)
+
+    inputimage = None
+    if options.isfile:
+        inputimage = InputImage.from_file(what)
+    elif options.isurl:
+        inputimage = InputImage.from_url(what)
+    elif options.isgoogle:
+        inputimage = InputImage.from_google(what)
+    elif options.isgoogleclipart:
+        inputimage = InputImage.from_google_clipart(what)
+    elif options.isopenclipart:
+        inputimage = InputImage.from_open_clipart(what)
+    else:
+        inputimage = InputImage.from_google(what)
+
+    print aa.convert(inputimage, lines=options.size, )
     
