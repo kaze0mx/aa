@@ -586,7 +586,7 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
         }
 	}
     else if(algorithm == AA_ALG_PIXEL_11) {
-        FreeImage_Invert(resized);
+        //FreeImage_Invert(resized);
         BYTE* pixel = FreeImage_GetBits(resized);
         BYTE* pixelc = FreeImage_GetBits(paletized);
         static const char* map = " .:+og@Q";
