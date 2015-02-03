@@ -219,9 +219,9 @@ class AaConverter:
         oldpath = os.environ['PATH'] 
         os.environ['PATH'] = me + ';' + os.environ['PATH']
         if os.name == "nt":
-            dll = cdll.LoadLibrary(os.path.join(me, "aa.dll"))
+            dll = cdll.LoadLibrary(os.path.join(me, "aalib.dll"))
         else:
-            dll = cdll.LoadLibrary(os.path.join(me, "aa.so"))
+            dll = cdll.LoadLibrary(os.path.join(me, "aalib.so"))
         os.environ['PATH'] = oldpath
 
         self.__init_font_default = dll.aa_init_font_default

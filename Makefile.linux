@@ -6,7 +6,7 @@ FreeImage=/usr/lib
 
 OBJS=transform.o aa.o
 
-all: aaconvert aa.so 
+all: aaconvert aalib.so 
 
 %.o: %.cpp %.h 
 	$(CC) -I. -c -fPIC $< -o $@
@@ -21,7 +21,7 @@ convert.o: convert.cpp video_pre.h video_post.h aa.h
 aaconvert: $(OBJS) convert.o
 	$(LNK) -static-libstdc++ -static-libgcc -o $@ -L$(FreeImage) $(OBJS) convert.o -lfreeimage 
 
-aa.so: $(OBJS)
+aalib.so: $(OBJS)
 	$(LNK) -static-libstdc++ -static-libgcc -shared -o $@ -L$(FreeImage) $(OBJS) -lfreeimage 
 
 
@@ -32,5 +32,5 @@ video_post.h: video_post.html
 	python raw2h.py video_post.html > video_post.h
 
 clean:
-	rm -f $(OBJS) aaconvert convert.o 
+	rm -f $(OBJS) aaconvert convert.o  aalib.so
 
