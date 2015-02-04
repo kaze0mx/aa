@@ -365,8 +365,10 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 #ifdef DEBUG
 	GenericWriter(image, "original.png", 0);
 #endif
-	//resize to working size
-	FIBITMAP* final = NULL;
+	
+    // preprocessing
+    // resize to working size
+	FIBITMAP* preprocessed = NULL;
 	if(working_height) {
 		int height = working_height;
 		float percent = (height/float(real_height));
@@ -374,42 +376,44 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 #ifdef DEBUG
 		fprintf(stderr, "Resizing image to %d*%d\n", width, height);
 #endif  
-		final = FreeImage_Rescale(image, width, height, FILTER_BILINEAR);
+		preprocessed = FreeImage_Rescale(image, width, height, FILTER_BILINEAR);
 	}
 	else {
-		final = FreeImage_Clone(image);		
+		preprocessed = FreeImage_Clone(image);		
 	}
-	if(final==NULL) {
+	if(preprocessed==NULL) {
 		return false;
 	}     
-    int working_width = FreeImage_GetWidth(final);
+    int working_width = FreeImage_GetWidth(preprocessed);
     // mean shift filter to segmentize the image and erase light differences (very slow)
     if(meanshift_r2 && meanshift_d2) {
         if ( real_bpp != 24 ) {
-            FIBITMAP* rgb = FreeImage_ConvertTo24Bits(final);
-            FreeImage_Unload(final);
-            final = rgb;
+            FIBITMAP* rgb = FreeImage_ConvertTo24Bits(preprocessed);
+            FreeImage_Unload(preprocessed);
+            preprocessed = rgb;
         }
-        final = mean_shift_filter(final, meanshift_r2, meanshift_d2, meanshift_n, meanshift_iterations);
+        preprocessed = mean_shift_filter(preprocessed, meanshift_r2, meanshift_d2, meanshift_n, meanshift_iterations);
 #ifdef DEBUG
         fprintf(stderr, "Mean-shifted image\n");
-        GenericWriter(final, "meanshift.png", 0);
+        GenericWriter(preprocessed, "meanshift.png", 0);
 #endif    
     }
     // use a soft blur to erase small differences (fast)
     else if(sigma) {
-        FIBITMAP* grey = FreeImage_ConvertToGreyscale(final);
-        FreeImage_Unload(final);
-        final = gaussian_filter(grey, sigma);
+        FIBITMAP* grey = FreeImage_ConvertToGreyscale(preprocessed);
+        FreeImage_Unload(preprocessed);
+        preprocessed = gaussian_filter(grey, sigma);
         greyscale = true;
 #ifdef DEBUG
         fprintf(stderr, "Gaussed image\n");
-        GenericWriter(final, "gaussed.png", 0);
+        GenericWriter(preprocessed, "gaussed.png", 0);
 #endif    
     }
+    
     // edge detection
+    FIBITMAP* for_vector = NULL;
     bool edge_detected = false;
-	if(algorithm >=  AA_ALG_VECTOR_DST && algorithm <=  AA_ALG_VECTOR_11_FILL) {
+	if(algorithm >=  AA_ALG_VECTOR_DST && algorithm <=  AA_ALG_VECTOR_OR_PIXEL) {
         edge_detected = true;
 		//edges
 #ifdef DEBUG
@@ -417,19 +421,20 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 #endif 
         if( !greyscale ) {
             // convert to greyscale
-            FIBITMAP* grey = FreeImage_ConvertToGreyscale(final);
-            FreeImage_Unload(final);
-            final = grey;
+            for_vector = FreeImage_ConvertToGreyscale(preprocessed);
             greyscale = true;
         }
+        else {
+            for_vector = FreeImage_Clone(preprocessed);	
+        }
 
-		final = canny_edge_detection(final, canny_min, canny_max);
-		if(final==NULL) {
+		for_vector = canny_edge_detection(for_vector, canny_min, canny_max);
+		if ( for_vector==NULL ) {
 			return false;
 		}
 #ifdef DEBUG
 		fprintf(stderr, "Blurring out small differences\n");
-		GenericWriter(final, "edges.png", 0);
+		GenericWriter(for_vector, "edges.png", 0);
 #endif 
         float postsigma;
         if ( working_width <= 128 )
@@ -439,88 +444,65 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
         else
             postsigma = 0.6;
         if ( postsigma )
-            final = gaussian_filter(final, postsigma);
-		final = threshold(final, 1);
+            for_vector = gaussian_filter(for_vector, postsigma);
+		for_vector = threshold(for_vector, 1);
 #ifdef DEBUG
-		GenericWriter(final, "edges_gaussed.png", 0);
+		GenericWriter(for_vector, "edges_gaussed.png", 0);
 #endif 
 
 		//thighten
 #ifdef DEBUG
 		fprintf(stderr, "Thinning image\n");
 #endif 
-		final = thinning(final);
+		for_vector = thinning(for_vector);
 #ifdef DEBUG
-		GenericWriter(final, "edges_thinned.png", 0);
+		GenericWriter(for_vector, "edges_thinned.png", 0);
 #endif 
-		FreeImage_Invert(final);
-	}
-	else {
-		//Convert to greyscale
-#ifdef DEBUG
-		fprintf(stderr, "Converting image to greyscale\n");
-#endif    
-		FIBITMAP* grey = FreeImage_ConvertToGreyscale(final);
-		if(grey==NULL) {
-			return false;
-		}
-		FreeImage_Unload(final);
-		final = grey;
+		FreeImage_Invert(for_vector);
 	}
 
-	//resize
-	int height,width,cols;
-    FREE_IMAGE_FILTER filter;
-    if(algorithm >=  AA_ALG_VECTOR_DST && algorithm <=  AA_ALG_VECTOR_11_FILL) {
-        height = PASY*lines;
-        float percent = (height/float(real_height));
-        width = int(real_width*percent);
-        width = width-(width%PASX);
-        cols = width/PASX;
-        filter = FILTER_BOX;
-    }
-    else if(algorithm == AA_ALG_PIXEL_11) {
-        height = lines;
-        float percent = (height/float(real_height));
-        width = int(real_width*percent)*2;
-        cols = width;
-        filter = FILTER_BOX;
-    }
-    else {
-        assert(false);
-    }
-	
+    FIBITMAP* for_pixel = NULL;
+    //resize for_pixel: 1 pixel = 1 character
+    int end_height, end_width, end_pitch, end_dif_pitch;
+    end_height = lines;
+    float percent = (end_height/float(real_height));
+    end_width = int(real_width*percent)*2;
+    for_pixel = FreeImage_Rescale(preprocessed, end_width, end_height, FILTER_BOX);
+    FreeImage_Unload(preprocessed);
 #ifdef DEBUG
-	fprintf(stderr, "Resizing image from %dx%d to %dx%d to fit in %d lines\n", real_width, real_height, width, height, lines);
-#endif
-	FIBITMAP* resized = FreeImage_Rescale(final, width, height, filter);
-	FreeImage_Unload(final);
+    fprintf(stderr, "Resizing image from %dx%d to %dx%d to fit in %d lines\n", real_width, real_height, end_width, end_height, lines);
+#endif        
+    FreeImage_FlipVertical(for_pixel);
+    //resize for_vector: 1 bloc = 1 character
+    if ( for_vector != NULL ) {
+        int height = PASY*end_height;
+        float percent = (height/float(real_height));
+        int width = end_width*PASX;
+        FIBITMAP* resized = FreeImage_Rescale(for_vector, width, height, FILTER_BOX);
+        FreeImage_Unload(for_vector);
+        for_vector = resized;
+    }
+    
 
     //threshold
-    if ( edge_detected ) { 
-        FreeImage_Invert(resized);
-        resized = threshold(resized, 1);
+    if (for_vector != NULL && edge_detected ) { 
+        FreeImage_Invert(for_vector);
+        for_vector = threshold(for_vector, 1);
+        FreeImage_FlipVertical(for_vector);
     }
 
-	int pitch = FreeImage_GetPitch(resized);
-#ifdef DEBUG
-        GenericWriter(resized, "final.png", 0);
-#endif
-        FreeImage_FlipVertical(resized);
     
     //color map
     if(palette_id < 0 || palette_id >=  AA_PAL_MAX) {
         fprintf(stderr, "Invalid palette id\n");
         return false;
     }
-    FIBITMAP* paletized = NULL;
+    res->colors = new BYTE[end_width*end_height];
     if ( palette_id != AA_PAL_NONE ) {
         AaPalette* palette = &hardcoded_palettes[palette_id];
         RGBQUAD freeimage_palette[PALETTE_MAX_SIZE];
         //converts to 24bits
-        FIBITMAP* color_resized = FreeImage_Rescale(image, width, height, FILTER_BSPLINE);
-        FIBITMAP* color_24 = FreeImage_ConvertTo24Bits(color_resized);
-        FreeImage_Unload(color_resized);
+        FIBITMAP* color_24 = FreeImage_ConvertTo24Bits(for_pixel);
         //LSB / MSB aware
         int effective_size = palette->size;
         if(palette->raw == NULL) {
@@ -531,7 +513,8 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
             freeimage_palette[i].rgbGreen = palette->raw[i].rgbGreen;
             freeimage_palette[i].rgbBlue = palette->raw[i].rgbBlue;
         }
-        paletized = FreeImage_ColorQuantizeEx(color_24, FIQ_NNQUANT, palette->size, effective_size, freeimage_palette);
+        FIBITMAP* paletized = FreeImage_ColorQuantizeEx(color_24, FIQ_NNQUANT, palette->size, effective_size, freeimage_palette);
+        FreeImage_Unload(color_24);
         //copy effective palette
         res->palette = new AaPalette;
         res->palette->size = palette->size;
@@ -542,11 +525,17 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
             res->palette->raw[i].rgbGreen = effective_palette[i].rgbGreen;
             res->palette->raw[i].rgbBlue = effective_palette[i].rgbBlue;
         }
-        FreeImage_Unload(color_24);
 #ifdef DEBUG
         GenericWriter(paletized, "paletized.png", 0);
 #endif        
-        FreeImage_FlipVertical(paletized);
+        BYTE* coul = res->colors;
+        BYTE* pixelc = FreeImage_GetBits(for_pixel);
+        for(int y = 0; y < end_height; y++, pixelc+= end_dif_pitch) {
+            for(int x = 0; x < end_width; x++) {
+                *coul++= *pixelc++;
+            }
+        }
+        FreeImage_Unload(paletized);
     }
     else {
         res->palette = new AaPalette;
@@ -554,54 +543,61 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
         res->palette->raw = NULL;
     }
 
-    
-	//bloc->char
-    res->cols = cols;
-    res->lines = lines-1;
+    res->cols = end_width;
+    res->lines = end_height;
     res->characters = new char[res->cols*res->lines+1];
-    res->colors = new BYTE[res->cols*res->lines+1];
-	char* cur = res->characters;
-    BYTE* coul = res->colors;
-    int dif_pitch = FreeImage_GetPitch(resized) - width;
-
-    if(algorithm >=  AA_ALG_VECTOR_DST && algorithm <=  AA_ALG_VECTOR_11_FILL) {
-        for(int y = 0; y < height-PASY; y+= PASY) {
-            for(int x = 0; x < width; x+= PASX) {
+	//bloc->char
+    if(algorithm >=  AA_ALG_VECTOR_DST && algorithm <=  AA_ALG_VECTOR_OR_PIXEL) {
+        int width = FreeImage_GetWidth(for_vector);
+        int height = FreeImage_GetHeight(for_vector);
+        BYTE* coul = res->colors;
+        char* cur = res->characters;
+        for(int y = 0; y <= height-PASY; y+= PASY) {
+            for(int x = 0; x <= width-PASX; x+= PASX) {
                 char bestcar;
-                if(algorithm == AA_ALG_VECTOR_DST || algorithm == AA_ALG_VECTOR_DST_FILL) {
-                    bestcar = get_best_char_distance(resized, font, x, y, translation, penalty);
+                if(algorithm == AA_ALG_VECTOR_DST || algorithm == AA_ALG_VECTOR_DST_FILL || algorithm == AA_ALG_VECTOR_OR_PIXEL) {
+                    bestcar = get_best_char_distance(for_vector, font, x, y, translation, penalty);
                 }
                 else if(algorithm == AA_ALG_VECTOR_11 || algorithm == AA_ALG_VECTOR_11_FILL) {
-                    bestcar = get_best_char(resized, font, x, y, translation, penalty);
+                    bestcar = get_best_char(for_vector, font, x, y, translation, penalty);
                 }
-                BYTE color = 0;
-                if ( palette_id != AA_PAL_NONE) 
-                    color = get_best_color(paletized, x, y);
-                if(color && bestcar==' ' && (algorithm == AA_ALG_VECTOR_DST_FILL || algorithm == AA_ALG_VECTOR_11_FILL)) {
+                BYTE color = *coul++;
+                if(palette_id != AA_PAL_NONE && color && bestcar==' ' && (algorithm == AA_ALG_VECTOR_DST_FILL || algorithm == AA_ALG_VECTOR_11_FILL)) {
                     bestcar = FILL_BACKGROUND;
                 }
-                *cur++= bestcar;
-                *coul++= color;
+                *cur++ = bestcar;
             }
         }
+        *cur = '\0';
 	}
-    else if(algorithm == AA_ALG_PIXEL_11) {
-        //FreeImage_Invert(resized);
-        BYTE* pixel = FreeImage_GetBits(resized);
-        BYTE* pixelc = FreeImage_GetBits(paletized);
-        static const char* map = " .:+og@Q";
-        for(int y = 0; y < height-1; y++, pixel+= dif_pitch, pixelc+= dif_pitch) {
-            for(int x = 0; x < width; x++) {
+  
+    //pixel->char 
+    if(algorithm == AA_ALG_PIXEL_11 || algorithm == AA_ALG_VECTOR_OR_PIXEL) {
+        FIBITMAP* grey = FreeImage_ConvertToGreyscale(for_pixel);
+        if (grey == NULL)
+            return false;
+        FreeImage_Unload(for_pixel);
+        for_pixel = grey;
+        FreeImage_Invert(for_pixel);
+        BYTE* pixel = FreeImage_GetBits(for_pixel);
+        char* cur = res->characters;
+        static const char* map = " .:+og@ ";
+        int end_dif_pitch = FreeImage_GetPitch(for_pixel) - FreeImage_GetWidth(for_pixel);
+        for(int y = 0; y < end_height; y++, pixel+= end_dif_pitch) {
+            for(int x = 0; x < end_width; x++) {
                 BYTE intensity = *pixel++;
-                if ( palette_id != AA_PAL_NONE) 
-                    *coul++= *pixelc++;
-                *cur++= map[intensity>>5];
+                if(algorithm == AA_ALG_PIXEL_11 || *cur==' ')
+                    *cur++ = map[intensity>>5];
+                else
+                    cur++;
             }
         }
+        *cur = '\0';
     }
-	*cur = '\0';
-    FreeImage_Unload(paletized);
-    FreeImage_Unload(resized);
+    if (for_pixel != NULL)
+        FreeImage_Unload(for_pixel);
+    if (for_vector != NULL)
+        FreeImage_Unload(for_vector);
 #ifdef DEBUG
 	FILE* f = fopen("final.txt", "w");
 	aa_output_ascii(res, f);

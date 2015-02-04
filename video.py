@@ -9,11 +9,11 @@ if __name__ == "__main__":
     usage = 'usage: %prog [options] <video.avi>'
     parser = optparse.OptionParser(usage=usage, description="""Plays a video in ascii art mode""")
     parser.add_option('-q', '--quality', dest='quality', action="store", type=int, default=3, help='Overall quality for the convertion (0-10), the higher the slower and better')
-    parser.add_option('-a', '--algorithm', dest='algorithm', action="store", default="blocmindist", help='asciisation algorithm to use (blocmindist, bloc11, pixel), defaults to blocmindist')
+    parser.add_option('-a', '--algorithm', dest='algorithm', action="store", default="blocmindist", help='asciisation algorithm to use (blocmindist, bloc11, pixel, combined), defaults to blocmindist')
     parser.add_option('-s', '--size', dest='size', action="store", type=int, default=25, help='Height of the ascii art in characters (default is 25)')
     parser.add_option('--loop', dest='loop', action="store_true", default=False, help='Play the video in loopback')
     parser.add_option('--start', dest='start', action="store", type=int, default=0, help='Starts the video playback at this part of the video (0-1000)')
-    parser.add_option('--stop', dest='stop', action="store", type=int, default=100, help='Stops the video playback at this part of the video (0-1000)')
+    parser.add_option('--stop', dest='stop', action="store", type=int, default=1000, help='Stops the video playback at this part of the video (0-1000)')
     parser.add_option('--sleep', dest='sleep', action="store", type=int, default=10, help='Delay in milliseconds between each redraw to go easy on CPU (video speed will stay the same but we may drop frames)')
 
     (options, args) = parser.parse_args()
@@ -27,6 +27,7 @@ if __name__ == "__main__":
         "blocmindist": AA_ALG_VECTOR_DST,
         "bloc11": AA_ALG_VECTOR_11,
         "pixel": AA_ALG_PIXEL_11,
+        "combined": AA_ALG_VECTOR_OR_PIXEL,
     }
     params.ascii_algorithm = algorithms_dic.get(options.algorithm, None)
     if params.ascii_algorithm is None:
