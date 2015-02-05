@@ -94,8 +94,8 @@ int main(int argc, char** argv) {
         AaImage aaimage;
         aa_convert(image, AA_ALG_VECTOR_OR_PIXEL, &font, &aaimage, ascii_num_lines, working_height, ascii_translation, ascii_black_white_penalty_ratio, AA_PAL_NONE, prefilter_gauss_sigma, canny_min, canny_max, meanshift_r2, meanshift_d2, meanshift_n, meanshift_iterations);
         aa_output_ascii(&aaimage, stdout);
-        aa_dispose(&aaimage);
-        aa_unload_bitmap(image);
+        aa_dispose_image(&aaimage);
+        aa_dispose_bitmap(image);
     }
     else {  
         char tmp[1024];
@@ -181,7 +181,7 @@ int main(int argc, char** argv) {
 
             if ( previous != NULL )
                 FreeImage_Unload(previous);
-            aa_dispose(&aaimage);
+            aa_dispose_image(&aaimage);
             if ( num_images > 1 ) {
                 previous = FreeImage_Clone(frame);
                 FreeImage_UnlockPage(video, frame, false);
@@ -194,7 +194,7 @@ int main(int argc, char** argv) {
         else if ( mode == 'v' )
             printf("%s", video_html_post);
     }
-    aa_free_font(&font);
+    aa_dispose_font(&font);
     return 0;
 }
 

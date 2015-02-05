@@ -23,7 +23,7 @@ class AaInternalImage(Structure):
     _fields_ = [
             ("cols", c_int),
             ("lines", c_int),
-            ("characters", POINTER(c_char)),
+            ("characters", c_char_p),
             ("colors", POINTER(c_byte)),
             ("palette", POINTER(AaPalette)),
      ]
@@ -80,6 +80,11 @@ class AaImage:
             b.append(self.content[self.width*i:self.width*(i+1)])
         return u"\n".join(b)
 
+    def __repr__(self):
+        b = []
+        for i in xrange(self.height):
+            b.append(self.content[self.width*i:self.width*(i+1)])
+        return "\n".join(b)
         
 
 class ConvertParameters:
@@ -239,13 +244,17 @@ class AaConverter:
         self.__load_bitmap_from_memory.argtypes = [POINTER(c_byte), c_int]
         self.__load_bitmap_from_memory.restype = c_void_p    
 
-        self.__unload_bitmap = dll.aa_unload_bitmap
-        self.__unload_bitmap.argtypes = [c_void_p,]
-        self.__unload_bitmap.restype = c_bool   
+        self.__dispose_bitmap = dll.aa_dispose_bitmap
+        self.__dispose_bitmap.argtypes = [c_void_p,]
+        self.__dispose_bitmap.restype = c_bool   
 
-        self.__dispose = dll.aa_dispose
-        self.__dispose.argtypes = [POINTER(AaInternalImage),]
-        self.__dispose.restype = c_bool
+        self.__dispose_image = dll.aa_dispose_image
+        self.__dispose_image.argtypes = [POINTER(AaInternalImage),]
+        self.__dispose_image.restype = c_bool
+
+        self.__dispose_font = dll.aa_dispose_font
+        self.__dispose_font.argtypes = [POINTER(AaFont),]
+        self.__dispose_font.restype = c_bool
 
         self.__convert = dll.aa_convert
         self.__convert.argtypes = [c_void_p, c_int, POINTER(AaFont), POINTER(AaInternalImage), c_int, c_int, 
@@ -283,9 +292,10 @@ class AaConverter:
                 params.color_palette, params.gauss_sigma, params.canny_min, params.canny_max,
                 params.meanshift_r2, params.meanshift_d2, params.meanshift_n, params.meanshift_iterations):
             raise ValueError("Could not convert image")
-        #self.__dispose(byref(res))
-        self.__unload_bitmap(image)
-        return AaImage(res.cols, res.lines, res.characters)
+        self.__dispose_bitmap(image)
+        r = AaImage(res.cols, res.lines, ""+res.characters)
+        self.__dispose_image(byref(res))
+        return r
 
         
 
@@ -334,5 +344,5 @@ if __name__ == "__main__":
         inputimage = InputImage.from_google(what)
 
     print "Source:", inputimage.source
-    print aa.convert(inputimage, lines=options.size, params=params)
+    print str(aa.convert(inputimage, lines=options.size, params=params))
     

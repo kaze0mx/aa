@@ -127,7 +127,7 @@ bool aa_init_font(FIBITMAP* font, const char* font_carmap, const char* subset, A
     return true;
 }
 
-void aa_free_font(AaFont* res) {
+void aa_dispose_font(AaFont* res) {
     FreeImage_Unload(res->font);
     delete[] res->font_subset;
     delete[] res->font_subset_matrix_full;
@@ -167,7 +167,7 @@ bool aa_init_font_from_picture(const char* font_picture_path, const char* font_c
     return ret;
 }
 
-bool aa_dispose(AaImage* image) {
+bool aa_dispose_image(AaImage* image) {
     delete[] image->characters;
     delete[] image->colors;
     delete[] image->palette->raw;
@@ -772,6 +772,6 @@ FIBITMAP* aa_load_bitmap_from_file(const char* path) {
 	return NULL;
 }
 
-void aa_unload_bitmap(FIBITMAP* bitmap) {
+void aa_dispose_bitmap(FIBITMAP* bitmap) {
     FreeImage_Unload(bitmap);
 }
