@@ -127,6 +127,13 @@ bool aa_init_font(FIBITMAP* font, const char* font_carmap, const char* subset, A
     return true;
 }
 
+void aa_free_font(AaFont* res) {
+    FreeImage_Unload(res->font);
+    delete[] res->font_subset;
+    delete[] res->font_subset_matrix_full;
+    delete[] res->font_subset_matrix_empty;
+}
+
 bool aa_init_font_default(AaFontId id, const char* subset, AaFont* res) {
     FIBITMAP* myfont = NULL;
     switch(id) {

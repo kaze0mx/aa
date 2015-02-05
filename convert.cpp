@@ -194,6 +194,7 @@ int main(int argc, char** argv) {
         else if ( mode == 'v' )
             printf("%s", video_html_post);
     }
+    aa_free_font(&font);
     return 0;
 }
 
