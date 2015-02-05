@@ -72,11 +72,13 @@ class AaImage:
         self.height = height
         self.content = content
 
-    def __repr__(self):
+
+
+    def __unicode__(self):
         b = []
         for i in xrange(self.height):
             b.append(self.content[self.width*i:self.width*(i+1)])
-        return "\n".join(b)
+        return u"\n".join(b)
 
         
 
