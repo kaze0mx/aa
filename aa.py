@@ -131,7 +131,7 @@ class ConvertParameters:
     @staticmethod
     def optimize(quality=5):    # give you some parameters to get the wanted quality (0..10)
         p = ConvertParameters()
-        p.working_height = 256 + ((quality+1)/2)*256
+        p.working_height = 256 + ((quality)/2)*256
         p.canny_min = quality > 2 and 40 or 0   # no low-match propagation when quality < 3
         p.pixel_translation = quality > 3 and 1 or 0
         p.gauss_sigma = quality > 3 and 0.3 or 0

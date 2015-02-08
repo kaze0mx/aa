@@ -11,10 +11,13 @@ if __name__ == "__main__":
     parser.add_option('-q', '--quality', dest='quality', action="store", type=int, default=3, help='Overall quality for the convertion (0-10), the higher the slower and better')
     parser.add_option('-a', '--algorithm', dest='algorithm', action="store", default="blocmindist", help='asciisation algorithm to use (blocmindist, bloc11, pixel, combined), defaults to blocmindist')
     parser.add_option('-s', '--size', dest='size', action="store", type=int, default=25, help='Height of the ascii art in characters (default is 25)')
+    parser.add_option('-t', '--status', dest='status', action="store_true", default=False, help='Add a status line at the bottom of the screen')
     parser.add_option('--loop', dest='loop', action="store_true", default=False, help='Play the video in loopback')
     parser.add_option('--start', dest='start', action="store", type=int, default=0, help='Starts the video playback at this part of the video (0-1000)')
     parser.add_option('--stop', dest='stop', action="store", type=int, default=1000, help='Stops the video playback at this part of the video (0-1000)')
-    parser.add_option('--sleep', dest='sleep', action="store", type=int, default=10, help='Delay in milliseconds between each redraw to go easy on CPU (video speed will stay the same but we may drop frames)')
+    parser.add_option('--cpu', dest='cpu', action="store", type=int, default=100, help='CPU max charge in % (defaults to 100)')
+    parser.add_option('--fps', dest='fps', action="store", type=int, default=0, help='Play the video at this framerate (overwrites video\'s FPS)')
+    parser.add_option('--dps', dest='dps', action="store", type=int, default=0, help='Draw this many frames per second (may sleep or skip frames)')
 
     (options, args) = parser.parse_args()
     if len(args) != 1:
@@ -32,22 +35,26 @@ if __name__ == "__main__":
     params.ascii_algorithm = algorithms_dic.get(options.algorithm, None)
     if params.ascii_algorithm is None:
         parser.error("Unknown algorithm %s" % (repr(options.algorithm),))
-    options.sleep = options.sleep/1000.0
 
     cap.set(cv2.CAP_PROP_POS_AVI_RATIO, options.stop/1000.0)
     stop = cap.get(cv2.CAP_PROP_POS_FRAMES)
     cap.set(cv2.CAP_PROP_POS_AVI_RATIO, options.start/1000.0)
     start = cap.get(cv2.CAP_PROP_POS_FRAMES)
-    video_fpms = cap.get(cv2.CAP_PROP_FPS)/1000.0
-    
+    video_fps = options.fps or cap.get(cv2.CAP_PROP_FPS)
+    if options.dps:
+        frame_ideal_time = 1.0/options.dps
+    else:
+        frame_ideal_time = 1.0/video_fps
+    cpu_rate = options.cpu/100.0 or 1.0
     cont = True
+    
 
     while cont:
         nframe = start
         cont = options.loop
         while nframe < stop:
-            time_1 = int(round(time.time() * 1000))
-            if not cap.set(cv2.CAP_PROP_POS_FRAMES, nframe):
+            time_1 = time.clock()
+            if not cap.set(cv2.CAP_PROP_POS_FRAMES, int(nframe)):
                 raise ValueError("Could not seek in video")
             if not cap.grab():
                 raise ValueError("Could ot grab frame")
@@ -60,10 +67,33 @@ if __name__ == "__main__":
             inputimage = InputImage(buf)
             print "\x1b[1;1H"
             print aa.convert(inputimage, lines=options.size, params=params)
-            time.sleep(options.sleep)
-            #ensure that the video plays at a proper speed
-            time_elapsed = int(round(time.time() * 1000)) - time_1
-            to_skip = int(video_fpms*time_elapsed)
+            time_elapsed = time.clock() - time_1
+           
+            # ensure that the video plays at a proper speed
+            render_fps = 1.0/time_elapsed
+            if time_elapsed < frame_ideal_time:
+                to_sleep = frame_ideal_time - time_elapsed
+                render_charge = int(100.0*time_elapsed/(time_elapsed+to_sleep))
+                if options.cpu != 100:
+                    to_sleep = max(to_sleep, (time_elapsed-cpu_rate*time_elapsed)/cpu_rate)
+            else:
+                if options.cpu != 100:
+                    to_sleep = (time_elapsed-cpu_rate*time_elapsed)/cpu_rate
+                else:
+                    to_sleep = 0
+                render_charge = 100
+            # tempo for respecting the video's fps and/or specified dps
+            if to_sleep:
+                time.sleep(to_sleep)
+            time_elapsed = time.clock() - time_1
+            real_fps = 1.0/time_elapsed
+            real_charge = int(100.0*time_elapsed/(time_elapsed+to_sleep))
+            # frame skip
+            to_skip = video_fps*time_elapsed
+            if not to_skip:
+                to_skip = 1
             nframe += to_skip
+            if options.status:
+                print "[%s] -- %3.2fDPS (%3d%%) -> %2.2fSLP+%2.2fSKP -> %3.2fFPS (%3d%%)" % (args[0], render_fps, render_charge, to_sleep, to_skip, real_fps, real_charge)
         nframe = start
 
