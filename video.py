@@ -40,7 +40,7 @@ if __name__ == "__main__":
     stop = cap.get(cv2.CAP_PROP_POS_FRAMES)
     cap.set(cv2.CAP_PROP_POS_AVI_RATIO, options.start/1000.0)
     start = cap.get(cv2.CAP_PROP_POS_FRAMES)
-    video_fps = options.fps or cap.get(cv2.CAP_PROP_FPS)
+    video_fps = options.fps or cap.get(cv2.CAP_PROP_FPS) or 24
     if options.dps:
         frame_ideal_time = 1.0/options.dps
     else:
@@ -90,10 +90,10 @@ if __name__ == "__main__":
             real_charge = int(100.0*time_elapsed/(time_elapsed+to_sleep))
             # frame skip
             to_skip = video_fps*time_elapsed
-            if not to_skip:
+            if to_skip < 1:
                 to_skip = 1
             nframe += to_skip
             if options.status:
-                print "[%s] -- %3.2fDPS (%3d%%) -> %2.2fSLP+%2.2fSKP -> %3.2fFPS (%3d%%)" % (args[0], render_fps, render_charge, to_sleep, to_skip, real_fps, real_charge)
+                print "[%s] -- %3.2fDPS (%3d%%) -> %2.2fSLP+%2.2fSKP -> %3.2fFPS (%3d%%)" % (args[0], render_fps, render_charge, to_sleep, to_skip-1, real_fps, real_charge)
         nframe = start
 

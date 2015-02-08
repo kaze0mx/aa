@@ -229,13 +229,13 @@ char get_best_char(FIBITMAP* image, AaFont* font, int x, int y, int translation,
 	int pitch = FreeImage_GetPitch(image);
 	BYTE* buffer = FreeImage_GetBits(image);
 	float minerr = 1000000000;
-	char best = '\0';
+	char best = ' ';
 
 	for(int dy = -translation; dy<= translation; dy++) {
-		if(y+dy < 0 || y+dy >=  image_height)
+		if(y+dy < 0 || y+dy > image_height-PASY)
 			continue;
 		for(int dx = -translation; dx<= translation; dx++) {
-			if(x+dx < 0 || x+dx >=  image_width)
+			if(x+dx < 0 || x+dx >image_width-PASX)
 				continue;
 			BYTE* bloc = &buffer[(y+dy)*pitch+x+dx];
 			for(int ii = 0;ii<font->font_subset_len;ii++) {
@@ -261,14 +261,14 @@ char get_best_char_distance(FIBITMAP* image, AaFont* font, int x, int y, int tra
 	int pitch = FreeImage_GetPitch(image);
 	BYTE* buffer = FreeImage_GetBits(image);
 	float minerr = 1000000000;
-	char best = '\0';
+	char best = ' ';
 	int bestind;
 
 	for(int dy = -translation; dy<= translation; dy++) {
-		if(y+dy < 0 || y+dy >=  image_height)
+		if(y+dy < 0 || y+dy > image_height-PASY)
 			continue;
 		for(int dx = -translation; dx<= translation; dx++) {
-			if(x+dx < 0 || x+dx >=  image_width)
+			if(x+dx < 0 || x+dx > image_width-PASX)
 				continue;
 			BYTE* bloc = &buffer[(y+dy)*pitch+x+dx];
 			BYTE* obloc = bloc;

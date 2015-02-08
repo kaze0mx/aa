@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
             exit(1);
         }
     }
-    unsigned int working_height = 256 + ((quality+1)/2)*256;
+    unsigned int working_height = 256 + (quality/2)*256;
     unsigned int canny_min = quality > 2?DEFAULT_CANNY_HYS_MIN:0;   // no low-match propagation when quality < 4
     unsigned int canny_max = DEFAULT_CANNY_HYS_MAX;
     unsigned int ascii_translation = quality > 3?1:0;
