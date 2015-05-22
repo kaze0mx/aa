@@ -268,12 +268,12 @@ void convolution(const BYTE* in, BYTE* out, const float *kernel,
     assert(kn % 2 == 1);
     assert(nx > kn && ny > kn);
     const int khalf = kn / 2;
-    float min = FLT_MAX, max = -FLT_MAX;
+    float min = FLT_MAX, max = FLT_MIN;
 
     if (normalize) {
         for (int m = khalf; m < nx - khalf; m++) {
             for (int n = khalf; n < ny - khalf; n++) {
-                BYTE lu = in[n*pitch+m];
+                pixel_t lu = in[n*pitch+m];
                 if(lu >= ignore_min && lu <=  ignore_max)
                     continue;
                 float pixel = 0.0;
@@ -291,6 +291,7 @@ void convolution(const BYTE* in, BYTE* out, const float *kernel,
         }
     }
     
+    float distance = max-min;
     for (int m = 0; m < nx; m++) {
         for (int n = 0; n < ny; n++) {
             int ind = n*pitch+m;
@@ -306,13 +307,12 @@ void convolution(const BYTE* in, BYTE* out, const float *kernel,
                         pixel +=  in[(n - j) * pitch + m - i] * kernel[c];
                         c++;
                     }
-     
                 if (normalize)
-                    pixel = MAX_BRIGHTNESS * (pixel - min) / (max - min);
-                if(pixel>MAX_BRIGHTNESS)
+                    pixel = (MAX_BRIGHTNESS * (pixel-min)) / distance;
+                if (pixel < 0)
+                    pixel = -pixel;
+                if (pixel > MAX_BRIGHTNESS)
                     pixel = MAX_BRIGHTNESS;
-                if(pixel<0)
-                    pixel = 0;
                 out[ind] = (pixel_t)pixel;
             }
             else {
@@ -564,8 +564,8 @@ FIBITMAP* canny_edge_detection(FIBITMAP* source, int MinHysteresisThresh, int Ma
     BYTE* DerivativeY2 = new BYTE[surface];
     convolution(buffer, DerivativeX1, SobelX1, width, height, pitch, 3, false, -1, -1);
     convolution(buffer, DerivativeY1, SobelY1, width, height, pitch, 3, false, -1, -1);
-    convolution(buffer, DerivativeX2, SobelX2, width, height, pitch, 3, false, -1, -1);
-    convolution(buffer, DerivativeY2, SobelY2, width, height, pitch, 3, false, -1, -1);
+    //convolution(buffer, DerivativeX2, SobelX2, width, height, pitch, 3, false, -1, -1);
+    //convolution(buffer, DerivativeY2, SobelY2, width, height, pitch, 3, false, -1, -1);
 #ifdef DEBUG
     fprintf(stderr, "Computed derivatives using sobel masks\n");
 #endif        
@@ -577,8 +577,8 @@ FIBITMAP* canny_edge_detection(FIBITMAP* source, int MinHysteresisThresh, int Ma
             int ind = j*pitch+i;
             if ( i > limit && i < width - limit && j > limit && j < height - limit) {
                 float a = (float)sqrt((((float)DerivativeX1[ind]) * DerivativeX1[ind]) + (((float)DerivativeY1[ind]) * DerivativeY1[ind]));
-                float b = (float)sqrt((((float)DerivativeX2[ind]) * DerivativeX2[ind]) + (((float)DerivativeY2[ind]) * DerivativeY2[ind]));
-                NonMax[ind] = a>b?a:b;
+                //float b = (float)sqrt((((float)DerivativeX2[ind]) * DerivativeX2[ind]) + (((float)DerivativeY2[ind]) * DerivativeY2[ind]));
+                NonMax[ind] = a;//>b?a:b;
             }
             else {
                 NonMax[ind] = 0;
@@ -586,6 +586,15 @@ FIBITMAP* canny_edge_detection(FIBITMAP* source, int MinHysteresisThresh, int Ma
         }
     }
  
+#ifdef DEBUG
+    FIBITMAP* clone2 = FreeImage_Clone(source);
+    BYTE* test2 = FreeImage_GetBits(clone2);
+    for (i = 0; i < surface; i++) {
+        test2[i] = (BYTE)NonMax[i];
+    }
+    DebugWriter(clone2, "NonMax.png");
+    FreeImage_Unload(clone2);
+#endif  
     
 #ifdef DEBUG
     fprintf(stderr, "Computed gradients\n");
