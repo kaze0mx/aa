@@ -24,6 +24,8 @@ if __name__ == "__main__":
     if len(args) != 1:
         parser.error('Incorrect number of arguments')
     
+    if not os.path.exists(args[0]):
+        raise ValueError("Could not open file %s" % args[0])
     #cap = cv2.VideoCapture(0)
     cap = cv2.VideoCapture(args[0])
     aa = AaConverter()

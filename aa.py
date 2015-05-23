@@ -1,3 +1,6 @@
+#!/usr/bin/python
+
+
 import os, sys, collections
 import optparse
 from ctypes import *

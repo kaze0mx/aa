@@ -559,13 +559,9 @@ FIBITMAP* canny_edge_detection(FIBITMAP* source, int MinHysteresisThresh, int Ma
     float SobelY1[] = {1,1,1,  0,0,0,  -1,-1,-1};
     float SobelY2[] = {-1,-1,-1,  0,0,0,  1,1,1};
     BYTE* DerivativeX1 = new BYTE[surface];
-    BYTE* DerivativeX2 = new BYTE[surface];
     BYTE* DerivativeY1 = new BYTE[surface];
-    BYTE* DerivativeY2 = new BYTE[surface];
     convolution(buffer, DerivativeX1, SobelX1, width, height, pitch, 3, false, -1, -1);
     convolution(buffer, DerivativeY1, SobelY1, width, height, pitch, 3, false, -1, -1);
-    //convolution(buffer, DerivativeX2, SobelX2, width, height, pitch, 3, false, -1, -1);
-    //convolution(buffer, DerivativeY2, SobelY2, width, height, pitch, 3, false, -1, -1);
 #ifdef DEBUG
     fprintf(stderr, "Computed derivatives using sobel masks\n");
 #endif        
@@ -577,8 +573,7 @@ FIBITMAP* canny_edge_detection(FIBITMAP* source, int MinHysteresisThresh, int Ma
             int ind = j*pitch+i;
             if ( i > limit && i < width - limit && j > limit && j < height - limit) {
                 float a = (float)sqrt((((float)DerivativeX1[ind]) * DerivativeX1[ind]) + (((float)DerivativeY1[ind]) * DerivativeY1[ind]));
-                //float b = (float)sqrt((((float)DerivativeX2[ind]) * DerivativeX2[ind]) + (((float)DerivativeY2[ind]) * DerivativeY2[ind]));
-                NonMax[ind] = a;//>b?a:b;
+                NonMax[ind] = a;
             }
             else {
                 NonMax[ind] = 0;
@@ -706,8 +701,6 @@ FIBITMAP* canny_edge_detection(FIBITMAP* source, int MinHysteresisThresh, int Ma
 #endif
     delete[] DerivativeX1;
     delete[] DerivativeY1;
-    delete[] DerivativeX2;
-    delete[] DerivativeY2;
     return source;
 }
 

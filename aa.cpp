@@ -367,6 +367,7 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 	int real_width = FreeImage_GetWidth(image);
 	int real_height = FreeImage_GetHeight(image);
     int real_bpp = FreeImage_GetBPP(image);
+    int working_width;
     bool greyscale = false;
     bool rgb = false;
 #ifdef DEBUG
@@ -376,7 +377,7 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
     // preprocessing
     // resize to working size
 	FIBITMAP* preprocessed = NULL;
-	if(working_height) {
+	if(working_height && working_height < real_height) {
 		int height = working_height;
 		float percent = (height/float(real_height));
 		int width = int(real_width*percent);
@@ -384,14 +385,17 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 		fprintf(stderr, "Resizing image to %d*%d\n", width, height);
 #endif  
 		preprocessed = FreeImage_Rescale(image, width, height, FILTER_BILINEAR);
+        working_width = FreeImage_GetWidth(preprocessed);
+        working_height = FreeImage_GetHeight(preprocessed);
 	}
 	else {
 		preprocessed = FreeImage_Clone(image);		
+        working_width = real_width;
+        working_height = real_height;
 	}
 	if(preprocessed==NULL) {
 		return false;
 	}     
-    int working_width = FreeImage_GetWidth(preprocessed);
     // mean shift filter to segmentize the image and erase light differences (very slow)
     if(meanshift_r2 && meanshift_d2) {
         if ( real_bpp != 24 ) {
