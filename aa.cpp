@@ -290,6 +290,7 @@ char get_best_char_distance(FIBITMAP* image, AaFont* font, int x, int y, int tra
 					for(int lin = 0;lin<PASX && err<minerr;lin++, dep++, bloc++) {
                         if(font->font_subset_matrix_full[mat_ind+dep]==0) {
                             int d = matbloc_full[dep]*font->font_subset_matrix_empty[mat_ind+dep];
+                            d=d*d;
                             err+= (1.0-penalty)*d;
 #ifdef VDEBUG
                             printf("%d", d);
@@ -297,6 +298,7 @@ char get_best_char_distance(FIBITMAP* image, AaFont* font, int x, int y, int tra
                         }
                         else if(*bloc > 128) {
                             int d = font->font_subset_matrix_full[mat_ind+dep]*matbloc_empty[dep];
+                            d=d*d;
                             err+= penalty*d;
 #ifdef VDEBUG							
                             printf("%d", d);
@@ -307,7 +309,6 @@ char get_best_char_distance(FIBITMAP* image, AaFont* font, int x, int y, int tra
                             printf(" ");
                         }
 #endif
-                        
 					}
 #ifdef VDEBUG					
 					printf("\n");

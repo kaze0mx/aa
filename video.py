@@ -24,10 +24,12 @@ if __name__ == "__main__":
     if len(args) != 1:
         parser.error('Incorrect number of arguments')
     
-    if not os.path.exists(args[0]):
-        raise ValueError("Could not open file %s" % args[0])
-    #cap = cv2.VideoCapture(0)
-    cap = cv2.VideoCapture(args[0])
+    if args[0] == "webcam":
+        cap = cv2.VideoCapture(0)
+    else:
+        if not os.path.exists(args[0]):
+            raise ValueError("Could not open file %s" % args[0])
+        cap = cv2.VideoCapture(args[0])
     aa = AaConverter()
     params = ConvertParameters.optimize(options.quality)
     algorithms_dic = {
@@ -42,6 +44,11 @@ if __name__ == "__main__":
 
     cap.set(cv2.CAP_PROP_POS_AVI_RATIO, options.stop/1000.0)
     stop = cap.get(cv2.CAP_PROP_POS_FRAMES)
+    if stop == 0:
+        if options.noskip:
+            stop = None
+        else:
+            raise ValueError("Could not seek in video")
     if stop < 0:        # webcam
         stop = None
     cap.set(cv2.CAP_PROP_POS_AVI_RATIO, options.start/1000.0)
@@ -66,7 +73,7 @@ if __name__ == "__main__":
                 if not cap.set(cv2.CAP_PROP_POS_FRAMES, int(nframe)):
                     raise ValueError("Could not seek in video")
             if not cap.grab():
-                raise ValueError("Could ot grab frame")
+                raise ValueError("Could not grab frame")
             flag, frame = cap.retrieve()
             if not flag:
                 raise ValueError
