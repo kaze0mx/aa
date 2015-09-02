@@ -184,7 +184,7 @@ class InputImage:
 
     @staticmethod
     def from_bing(search):
-        query = urllib.urlencode({"Query" : repr(search), "ImageFilters": repr("Style:Photo+Color:Monochrome"), "Market": repr("fr-FR"), "Adult":repr("Off")})
+        query = urllib.urlencode({"Query" : repr(search), "ImageFilters": repr("Color:Monochrome"), "Market": repr("fr-FR"), "Adult":repr("Off")})
         url = "https://api.datamarket.azure.com/Data.ashx/Bing/Search/Image?%s&$format=json" % (query)
         search_results = requests.get(url, auth=(BING_KEY, BING_KEY)).json()
         res = search_results.get("d", {}).get("results", [])
