@@ -36,11 +36,14 @@ class AA:
             draw.text((0, 0), self.fontmap, font=font,fill="white")
             fnt.save(os.path.join(os.path.dirname(__file__),"fnt.png"),"PNG")
         # Create bloc tab
-        fnt=Image.open(os.path.join(os.path.dirname(__file__),"fnt.png"))
-        self.blocmap=[]
-        for car in range(len(self.fontmap)):
-            bloc=self.get_bloc(fnt,car*PASX,0,perpixel=lambda k: int(k!=0))
-            self.blocmap.append(bloc)
+        try:
+            fnt=Image.open(os.path.join(os.path.dirname(__file__),"fnt.png"))
+            self.blocmap=[]
+            for car in range(len(self.fontmap)):
+                bloc=self.get_bloc(fnt,car*PASX,0,perpixel=lambda k: int(k!=0))
+                self.blocmap.append(bloc)
+        except:
+            pass
         self.last_img=None
         self.penalty_empty=penalty_empty
         self.penalty_full=penalty_full
@@ -109,7 +112,7 @@ class AA:
         (str,str)
         Dessine <text> via fyglet. Si <font> est nul, choisis une font au hasard
         """
-        import pyfiglet,pyfiglet.fonts  #lame package
+        import pyfiglet  #lame package
         res=""
         first = True
         while not res.replace("\n","").replace("\r","").strip():

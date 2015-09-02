@@ -4,7 +4,7 @@
 import os, sys, collections
 import optparse
 from ctypes import *
-import json, urllib
+import json, urllib, requests, random
 
 class AaColor(Structure):
     _pack_ = 1
@@ -67,6 +67,7 @@ AA_PAL_FREE_256 = 5
 FONT_SUBSET = " $^+*#&\"'|~(-)=345atiopqdfghjkl<,:AZTYJL%>X@VN?.\\/_"
 FONT_TINY_SUBSET = " .o@/\\_'yT)(,-bd"
 
+BING_KEY = "+wGKA1eii9MBZnCIsQprsBtV8HXfjHB2huCImhM6Fko"
 
 class AaImage:
 
@@ -166,9 +167,36 @@ class InputImage:
             raise ValueError("Could not open image at url %s" % (url,))
         return InputImage(data, source=opener.geturl())
 
+
+    @staticmethod
+    def from_bing_clipart(search):
+        query = urllib.urlencode({"Query" : repr(search), "ImageFilters": repr("Style:Graphics+Color:Monochrome"), "Market": repr("fr-FR"), "Adult":repr("Off")})
+        url = "https://api.datamarket.azure.com/Data.ashx/Bing/Search/Image?%s&$format=json" % (query)
+        search_results = requests.get(url, auth=(BING_KEY, BING_KEY)).json()
+        res = search_results.get("d", {}).get("results", [])
+        for r in res:
+            try:
+                return InputImage.from_url(r.get("MediaUrl"))
+            except: pass
+        return None  
+
+
+
+    @staticmethod
+    def from_bing(search):
+        query = urllib.urlencode({"Query" : repr(search), "ImageFilters": repr("Style:Photo+Color:Monochrome"), "Market": repr("fr-FR"), "Adult":repr("Off")})
+        url = "https://api.datamarket.azure.com/Data.ashx/Bing/Search/Image?%s&$format=json" % (query)
+        search_results = requests.get(url, auth=(BING_KEY, BING_KEY)).json()
+        res = search_results.get("d", {}).get("results", [])
+        for r in res:
+            try:
+                return InputImage.from_url(r.get("MediaUrl"))
+            except: pass
+        return None      
+
     @staticmethod
     def from_google_clipart(search):
-        query = urllib.urlencode({"q" : search, "googlehost":"google.com","imgtype":"clipart","hl":"fr","isc":"white","isz":"s","safe":"off"})
+        query = urllib.urlencode({"q" : search, "hl":"fr", "imgc":"gray", "imgtype":"clipart", "safe":"off"})
         url = "http://ajax.googleapis.com/ajax/services/search/images?v=1.0&%s" % (query)
         search_results = urllib.urlopen(url)
         jsonobj = json.loads(search_results.read())
@@ -187,7 +215,7 @@ class InputImage:
 
     @staticmethod
     def from_google(search):
-        query = urllib.urlencode({"q" : search, "googlehost":"google.com","hl":"fr","isc":"white","isz":"s","safe":"off"})
+        query = urllib.urlencode({"q" : search, "googlehost":"google.com","hl":"fr","imgc":"gray","safe":"off", "imgtype":"photo"})
         url = "http://ajax.googleapis.com/ajax/services/search/images?v=1.0&%s" % (query)
         search_results = urllib.urlopen(url)
         jsonobj = json.loads(search_results.read())
@@ -310,6 +338,8 @@ if __name__ == "__main__":
     parser.add_option('-u', '--url', dest='isurl', action="store_true", default=False, help='The command line argument is an url')
     parser.add_option('-g', '--google', dest='isgoogle', action="store_true", default=False, help='The command line argument is a google image search')
     parser.add_option('-i', '--googleclipart', dest='isgoogleclipart', action="store_true", default=False, help='The command line argument is a google clipart search')
+    parser.add_option('-b', '--bing', dest='isbing', action="store_true", default=False, help='The command line argument is a bing search')
+    parser.add_option('-j', '--bingclipart', dest='isbingclipart', action="store_true", default=False, help='The command line argument is a bing clipart search')
     parser.add_option('-c', '--openclipart', dest='isopenclipart', action="store_true", default=False, help='The command line argument is a openclipart image search')
     parser.add_option('-s', '--size', dest='size', action="store", type=int, default=32, help='Height of the ascii art in characters (default is 32)')
     parser.add_option('-q', '--quality', dest='quality', action="store", type=int, default=5, help='Overall quality for the convertion (0-10), the higher the slower and better')
@@ -343,6 +373,10 @@ if __name__ == "__main__":
         inputimage = InputImage.from_google_clipart(what)
     elif options.isopenclipart:
         inputimage = InputImage.from_open_clipart(what)
+    elif options.isbingclipart:
+        inputimage = InputImage.from_bing_clipart(what)
+    elif options.isbing:
+        inputimage = InputImage.from_bing(what)
     else:
         inputimage = InputImage.from_google(what)
 
