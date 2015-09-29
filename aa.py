@@ -153,6 +153,24 @@ class InputImage:
         self.data = data
         self.source = source
 
+    def autocrop(self):
+        import PIL as PIL
+        from PIL import Image, ImageChops
+        from io import BytesIO
+        with BytesIO(self.data) as bio:
+            im = Image.open(bio)
+            im.load()
+        im = im.crop((1,1,im.size[0]-1, im.size[1]-1))
+        bg = Image.new(im.mode, im.size, im.getpixel((1,1)))
+        diff = ImageChops.difference(im, bg)
+        diff = ImageChops.add(diff, diff, 2.0, -100)
+        bbox = diff.getbbox()
+        if bbox:
+            im = im.crop(bbox)
+            with BytesIO() as bio:
+                im.save(bio, 'PNG')
+                self.data = bio.getvalue()
+
     @staticmethod
     def from_file(path):
         with open(path, "rb") as f:
@@ -184,7 +202,7 @@ class InputImage:
 
     @staticmethod
     def from_bing(search):
-        query = urllib.urlencode({"Query" : repr(search), "ImageFilters": repr("Color:Monochrome"), "Market": repr("fr-FR"), "Adult":repr("Off")})
+        query = urllib.urlencode({"Query" : repr(search), "Market": repr("fr-FR"), "Adult":repr("Off")})
         url = "https://api.datamarket.azure.com/Data.ashx/Bing/Search/Image?%s&$format=json" % (query)
         search_results = requests.get(url, auth=(BING_KEY, BING_KEY)).json()
         res = search_results.get("d", {}).get("results", [])
@@ -381,5 +399,6 @@ if __name__ == "__main__":
         inputimage = InputImage.from_google(what)
 
     print "Source:", inputimage.source
+    inputimage.autocrop()
     print str(aa.convert(inputimage, lines=options.size, params=params))
     
