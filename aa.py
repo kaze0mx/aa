@@ -166,7 +166,8 @@ class InputImage:
         diff = ImageChops.add(diff, diff, 2.0, -100)
         bbox = diff.getbbox()
         if bbox:
-            im = im.crop(bbox)
+            x1, y1, x2, y2 = bbox
+            im = im.crop((x1-8, y1-8, x2+8, y2+8))
             with BytesIO() as bio:
                 im.save(bio, 'PNG')
                 self.data = bio.getvalue()
