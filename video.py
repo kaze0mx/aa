@@ -81,7 +81,7 @@ if __name__ == "__main__":
             if not flag:
                 raise ValueError
             inputimage = InputImage(buf)
-            print "\x1b[1;1H"
+            #print "\x1b[1;1H"
             print aa.convert(inputimage, lines=options.size, params=params)
             time_elapsed = time.clock() - time_1
            

@@ -81,13 +81,17 @@ class AaImage:
     def __unicode__(self):
         b = []
         for i in xrange(self.height):
-            b.append(self.content[self.width*i:self.width*(i+1)])
+            l = self.content[self.width*i:self.width*(i+1)].rstrip()
+            if l:
+                b.append(l)
         return u"\n".join(b)
 
     def __repr__(self):
         b = []
         for i in xrange(self.height):
-            b.append(self.content[self.width*i:self.width*(i+1)])
+            l = self.content[self.width*i:self.width*(i+1)].rstrip()
+            if l:
+                b.append(l)
         return "\n".join(b)
         
 
