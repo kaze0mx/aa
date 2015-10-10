@@ -121,8 +121,9 @@
                     {% for res in result %}
                     <div style="display:inline-block; margin:5px">
                         {% autoescape false %}
-                        <pre>{{ res[1] }}</pre>
+                        <pre><code>{{ res[1] | escape}}</code></pre>
                         {% endautoescape %}
+                        <a href="{{res[0]}}">[Original]</a>
                     </div>
 
                     {% endfor %}

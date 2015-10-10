@@ -15,15 +15,6 @@ app = Flask(__name__)
 aa = AaConverter()
 last_image= None
 
-if not os.path.exists("conf.py"):
-    raise ValueError("Please copy conf.py.template to conf.py and update as needed")
-
-
-class FakePool:
-
-    def map(self, fn, iterab):
-        return map(fn, iterab)
-
 
 def search_iter_bing(search, clipart=True):
     if clipart:
