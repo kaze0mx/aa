@@ -3,8 +3,7 @@ import optparse
 import multiprocessing
 import json, urllib, requests
 from flask import Flask, session, request, flash, url_for, redirect, render_template, abort, g, jsonify
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from aa import *
+import convert
 
 DEFAULT_NUM = 30
 BING_KEY = "+wGKA1eii9MBZnCIsQprsBtV8HXfjHB2huCImhM6Fko"
@@ -12,9 +11,7 @@ SEARCH_QUALITY = 5
 SEARCH_LINES = 20
 
 app = Flask(__name__)
-aa = AaConverter()
 last_image= None
-pool = multiprocessing.Pool(processes=DEFAULT_NUM)              # start 4 worker processes
 
 
 def search_iter_bing(search, clipart=True):
@@ -66,32 +63,17 @@ def index():
                 urls.append(el)
             i += 1        
         # Convert
-        params = ConvertParameters.optimize(SEARCH_QUALITY)
-        todo = [ (u, SEARCH_LINES, params) for u in urls]
-        for res in pool.map(convert, todo):
+        todo = [ (u, SEARCH_LINES, SEARCH_QUALITY) for u in urls]
+        for res in app.pool.map(convert.convert, todo):
             ok, url, ascii = res
             if ok:
                 r.append((url, ascii))
     return render_template("base.html", result=r, query=req)
 
 
-
-def convert(args):
-    url, lines, config = args
-    try:
-        inputimage = InputImage.from_url(url)
-        inputimage.autocrop()
-        t = str(aa.convert(inputimage, lines=lines, params=config))
-        if not t.strip():
-            raise ValueError("empty")
-        nl = t.splitlines()
-        if nl < SEARCH_LINES:
-            t += "\n"*(SEARCH_LINES-nl)
-        return (True, url, t)
-    except BaseException as e:
-        return (False, url, str(e))
-
 if __name__ == '__main__':
     # Run t
-    app.run(host='0.0.0.0', threaded=True, port=5000, debug=False)
+    app.pool = multiprocessing.Pool(processes=DEFAULT_NUM)              # start 4 worker processes
+    print "running"
+    app.run(host='0.0.0.0', threaded=True, port=5000, debug=True)
     
