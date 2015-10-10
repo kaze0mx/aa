@@ -3,7 +3,7 @@ import optparse
 import multiprocessing
 import json, urllib, requests
 from flask import Flask, session, request, flash, url_for, redirect, render_template, abort, g, jsonify
-sys.path.append("..")
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from aa import *
 
 DEFAULT_NUM = 30
@@ -14,6 +14,7 @@ SEARCH_LINES = 20
 app = Flask(__name__)
 aa = AaConverter()
 last_image= None
+pool = multiprocessing.Pool(processes=DEFAULT_NUM)              # start 4 worker processes
 
 
 def search_iter_bing(search, clipart=True):
@@ -67,7 +68,7 @@ def index():
         # Convert
         params = ConvertParameters.optimize(SEARCH_QUALITY)
         todo = [ (u, SEARCH_LINES, params) for u in urls]
-        for res in app.pool.map(convert, todo):
+        for res in pool.map(convert, todo):
             ok, url, ascii = res
             if ok:
                 r.append((url, ascii))
@@ -92,6 +93,5 @@ def convert(args):
 
 if __name__ == '__main__':
     # Run t
-    app.pool = multiprocessing.Pool(processes=DEFAULT_NUM)              # start 4 worker processes
     app.run(host='0.0.0.0', threaded=True, port=5000, debug=False)
     
