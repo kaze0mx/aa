@@ -18,8 +18,11 @@ BYTE font_cour[] = ""
 #include "cour.h"
 ;
 
+#define DEBUG
+
 static AaColor pal_mono[] = { {0,0,0}, {255,255,255} };
 static AaColor pal_ansi16[] = {{0,0,0}, {128,0,0}, {0,128,0}, {128,128,0}, {0,0,128}, {128,0,128}, {0,128,128}, {192,192,192}, {127,127,127}, {255,0,0}, {0,255,0}, {255,255,0}, {0,0,255}, {255,0,255}, {0,255,255}, {255,255,255}};
+static AaColor pal_parano[] = {{0x14,0x11,0x0f}, {0x3b,0x48,0x3b}, {0xff,0xff,0xff}, {0xcc,0x2e,0x2e}, {0xa0,0x8b,0x61}, {0x52,0x22,0x41}, {0xd9,0xba,0xc6}, {0x5b,0x29,0x18}, {0xe9,0xde,0x7f}, {0x9f,0x9f,0x9f}, {0,255,0}, {0x69,51,0x2e}, {0x57,0x48,0x48}, };
 
 static AaPalette hardcoded_palettes[] = { \
     { pal_mono, 2 }, \
@@ -28,7 +31,8 @@ static AaPalette hardcoded_palettes[] = { \
     { NULL, 2 }, \
     { NULL, 16 }, \
     { NULL, 64 }, \
-    { NULL, 256 } \
+    { NULL, 256 }, \
+    { pal_parano, 12 } \
 };
 
 
@@ -106,8 +110,14 @@ void compute_matrix_bloc(BYTE* bloc, int pitch, int* matrix_full, int* matrix_em
 
 bool aa_init_font(FIBITMAP* font, const char* font_carmap, const char* subset, AaFont* res) {
 	FreeImage_FlipVertical(font);
+#ifdef DEBUG
+    GenericWriter(font, "font1.png", 0);
+#endif
 	res->font = FreeImage_ConvertToGreyscale(font);
     res->font = threshold(res->font, THRESHOLD_FONT);
+#ifdef DEBUG
+    GenericWriter(res->font, "font2.png", 0);
+#endif
 	res->font_buffer = FreeImage_GetBits(res->font);
 	res->font_buffer_pitch = FreeImage_GetPitch(res->font);
 	res->font_carmap = font_carmap;
@@ -141,10 +151,10 @@ bool aa_init_font_default(AaFontId id, const char* subset, AaFont* res) {
             myfont = aa_load_bitmap_from_memory(font_consola, sizeof(font_consola)-1);
             break;
         case AA_FT_LUCIDA:
-            myfont = aa_load_bitmap_from_memory(font_lucon, sizeof(font_consola)-1);
+            myfont = aa_load_bitmap_from_memory(font_lucon, sizeof(font_lucon)-1);
             break;
         case AA_FT_COURIER:
-            myfont = aa_load_bitmap_from_memory(font_cour, sizeof(font_consola)-1);
+            myfont = aa_load_bitmap_from_memory(font_cour, sizeof(font_cour)-1);
             break;
     }
     if(myfont==NULL) {
@@ -169,8 +179,10 @@ bool aa_init_font_from_picture(const char* font_picture_path, const char* font_c
 
 bool aa_dispose_image(AaImage* image) {
     delete[] image->characters;
-    delete[] image->colors;
-    delete[] image->palette->raw;
+    if (image->colors)
+        delete[] image->colors;
+    if (image->palette->raw)
+        delete[] image->palette->raw;
     delete image->palette;
     return true;
 }
@@ -361,6 +373,107 @@ BYTE get_best_color(FIBITMAP* paletized, int x, int y) {
 	return best;
 }
 
+
+/*
+ *
+ */
+FIBITMAP* pixel_convert(FIBITMAP* image, int final_height, int working_height, AaPaletteId palette_id, float sigma, float meanshift_r2, float meanshift_d2, int meanshift_n, int meanshift_iterations) {
+	int real_width = FreeImage_GetWidth(image);
+	int real_height = FreeImage_GetHeight(image);
+    int real_bpp = FreeImage_GetBPP(image);
+    int working_width;
+    bool rgb = false;
+#ifdef DEBUG
+	GenericWriter(image, "original.png", 0);
+#endif
+	
+    // preprocessing
+    // resize to working size
+	FIBITMAP* preprocessed = NULL;
+	if(working_height && working_height < real_height) {
+		int height = working_height;
+		float percent = (height/float(real_height));
+		int width = int(real_width*percent);
+#ifdef DEBUG
+		fprintf(stderr, "Resizing image to %d*%d\n", width, height);
+#endif  
+		preprocessed = FreeImage_Rescale(image, width, height, FILTER_BILINEAR);
+        working_width = FreeImage_GetWidth(preprocessed);
+        working_height = FreeImage_GetHeight(preprocessed);
+	}
+	else {
+		preprocessed = FreeImage_Clone(image);		
+        working_width = real_width;
+        working_height = real_height;
+	}
+	if(preprocessed==NULL) {
+		return NULL;
+	}    
+    // mean shift filter to segmentize the image and erase light differences (very slow)
+    if(meanshift_r2 && meanshift_d2) {
+        if ( real_bpp != 24 ) {
+            FIBITMAP* rgb = FreeImage_ConvertTo24Bits(preprocessed);
+            FreeImage_Unload(preprocessed);
+            preprocessed = rgb;
+        }
+        preprocessed = mean_shift_filter(preprocessed, meanshift_r2, meanshift_d2, meanshift_n, meanshift_iterations);
+#ifdef DEBUG
+        fprintf(stderr, "Mean-shifted image\n");
+        GenericWriter(preprocessed, "meanshift.png", 0);
+#endif    
+    }
+    // use a soft blur to erase small differences (fast)
+    else if(sigma) {
+        FIBITMAP* grey = FreeImage_ConvertToGreyscale(preprocessed);
+        FreeImage_Unload(preprocessed);
+        preprocessed = gaussian_filter(grey, sigma);
+#ifdef DEBUG
+        fprintf(stderr, "Gaussed image\n");
+        GenericWriter(preprocessed, "gaussed.png", 0);
+#endif    
+    }
+
+    // resize image
+	if(final_height && final_height < real_height) {
+		int height = final_height;
+		float percent = (height/float(real_height));
+		int width = int(real_width*percent);
+#ifdef DEBUG
+		fprintf(stderr, "Resizing image to %d*%d\n", width, height);
+#endif  
+		FIBITMAP* resized = FreeImage_Rescale(preprocessed, width, height, FILTER_BILINEAR);
+        FreeImage_Unload(preprocessed);
+        preprocessed = resized;
+	}
+
+    //paletize
+    if ( palette_id != AA_PAL_NONE ) {
+        AaPalette* palette = &hardcoded_palettes[palette_id];
+        RGBQUAD freeimage_palette[PALETTE_MAX_SIZE];
+        //converts to 24bits
+        FIBITMAP* color_24 = FreeImage_ConvertTo24Bits(preprocessed);
+        //LSB / MSB aware
+        int effective_size = palette->size;
+        if(palette->raw == NULL) {
+            effective_size = 0;
+        }
+        for(int i = 0;i<effective_size;i++) {
+            freeimage_palette[i].rgbRed = palette->raw[i].rgbRed;
+            freeimage_palette[i].rgbGreen = palette->raw[i].rgbGreen;
+            freeimage_palette[i].rgbBlue = palette->raw[i].rgbBlue;
+        }
+        FIBITMAP* paletized = FreeImage_ColorQuantizeEx(color_24, FIQ_NNQUANT, palette->size, effective_size, freeimage_palette);
+        FreeImage_Unload(color_24);
+#ifdef DEBUG
+        GenericWriter(paletized, "paletized.png", 0);
+#endif            
+        FreeImage_Unload(preprocessed);
+        preprocessed = paletized;
+    }
+
+    return preprocessed;
+}
+
 /*
  *
  */
@@ -378,7 +491,7 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
     // preprocessing
     // resize to working size
 	FIBITMAP* preprocessed = NULL;
-	if(working_height && working_height < real_height) {
+	if(working_height ) {
 		int height = working_height;
 		float percent = (height/float(real_height));
 		int width = int(real_width*percent);
@@ -474,12 +587,14 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
 	}
 
     FIBITMAP* for_pixel = NULL;
-    //resize for_pixel: 1 pixel = 1 character
     int end_height, end_width, end_pitch, end_dif_pitch;
     end_height = lines;
     float percent = (end_height/float(real_height));
     end_width = int(real_width*percent)*2;
-    for_pixel = FreeImage_Rescale(preprocessed, end_width, end_height, FILTER_BOX);
+    if (algorithm == AA_ALG_PIXEL_11 || algorithm == AA_ALG_VECTOR_OR_PIXEL || palette_id != AA_PAL_NONE ) {
+        //resize for_pixel: 1 pixel = 1 character
+        for_pixel = FreeImage_Rescale(preprocessed, end_width, end_height, FILTER_BOX);
+    }
     FreeImage_Unload(preprocessed);
 #ifdef DEBUG
     fprintf(stderr, "Resizing image from %dx%d to %dx%d to fit in %d lines\n", real_width, real_height, end_width, end_height, lines);
@@ -509,8 +624,8 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
         fprintf(stderr, "Invalid palette id\n");
         return false;
     }
-    res->colors = new BYTE[end_width*end_height];
     if ( palette_id != AA_PAL_NONE ) {
+        res->colors = new BYTE[end_width*end_height];
         AaPalette* palette = &hardcoded_palettes[palette_id];
         RGBQUAD freeimage_palette[PALETTE_MAX_SIZE];
         //converts to 24bits
@@ -550,6 +665,7 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
         FreeImage_Unload(paletized);
     }
     else {
+        res->colors = NULL;
         res->palette = new AaPalette;
         res->palette->size = 0;
         res->palette->raw = NULL;
@@ -560,6 +676,16 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
     res->characters = new char[res->cols*res->lines+1];
 	//bloc->char
     if(algorithm >=  AA_ALG_VECTOR_DST && algorithm <=  AA_ALG_VECTOR_OR_PIXEL) {
+#ifdef DEBUG
+        FIBITMAP* combined = FreeImage_ConvertTo32Bits(for_vector);
+        unsigned char luv[256];
+        for (unsigned int i=0; i < 256; i++) {
+            luv[i] = 0;
+        }
+        FreeImage_AdjustCurve(combined, luv, FICC_BLUE);
+        FreeImage_AdjustCurve(combined, luv, FICC_GREEN);
+        FreeImage_FlipVertical(combined);
+#endif        
         int width = FreeImage_GetWidth(for_vector);
         int height = FreeImage_GetHeight(for_vector);
         BYTE* coul = res->colors;
@@ -573,14 +699,41 @@ bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage*
                 else if(algorithm == AA_ALG_VECTOR_11 || algorithm == AA_ALG_VECTOR_11_FILL) {
                     bestcar = get_best_char(for_vector, font, x, y, translation, penalty);
                 }
-                BYTE color = *coul++;
-                if(palette_id != AA_PAL_NONE && color && bestcar==' ' && (algorithm == AA_ALG_VECTOR_DST_FILL || algorithm == AA_ALG_VECTOR_11_FILL)) {
-                    bestcar = FILL_BACKGROUND;
+                if (coul && palette_id != AA_PAL_NONE && (algorithm == AA_ALG_VECTOR_DST_FILL || algorithm == AA_ALG_VECTOR_11_FILL)) {
+                    BYTE color = *coul++;
+                    if(color && bestcar==' ') {
+                        bestcar = FILL_BACKGROUND;
+                    }
                 }
                 *cur++ = bestcar;
+#ifdef DEBUG
+                unsigned int carmappos = 0;
+                for (unsigned int i=0; i < font->font_carmap_len; i++) {
+                    if (bestcar == font->font_carmap[i]) {
+                        carmappos = i;
+                        break;
+                    }
+                }
+                FIBITMAP* fontbitmap = FreeImage_Copy(font->font, carmappos*PASX, 0, (carmappos+1)*PASX, PASY);
+                BYTE* line = FreeImage_GetScanLine(fontbitmap, 0);
+                for (unsigned int i=0; i < PASX; i++) {
+                    line[i] = 32;
+                }
+                for (unsigned int i=0; i < PASY; i++) {
+                    line = FreeImage_GetScanLine(fontbitmap, i);
+                    line[0] = 32;
+                }
+                FreeImage_FlipVertical(fontbitmap);
+                FreeImage_Paste(combined, fontbitmap, x, y, 128);
+                FreeImage_Unload(fontbitmap);
+#endif        
             }
         }
         *cur = '\0';
+#ifdef DEBUG
+        GenericWriter(combined, "combined.png", 0);
+        FreeImage_Unload(combined);
+#endif        
 	}
   
     //pixel->char 
@@ -641,7 +794,9 @@ bool aa_output_ansi16(AaImage* image, FILE* out) {
     for(int y = 0; y<image->lines;y++) {
         for(int x = 0; x < image->cols; x++) {
             char bestcar = *cur++;
-            int fg_color = *coul++;
+            int fg_color = 7;
+            if (coul)
+                fg_color = *coul++;
             int bg_color = 0;
             if(bestcar!=' ' && fg_color==0) 
                 fg_color = 7;
@@ -668,7 +823,7 @@ bool aa_output_html(AaImage* image, FILE* out, bool palette) {
     if(palette) {
         aa_output_html_palette(image, out);
     }
-    fprintf(out, "<pre style = 'background-color:black;font-family:\"Lucida Console\";font-size:10pt'>\n");
+    fprintf(out, "<pre style='background-color:black;font-size:10pt;color:white'>\n");
     char* cur = image->characters;
     BYTE* coul = image->colors;
     int lastcolor = -1;
@@ -676,17 +831,17 @@ bool aa_output_html(AaImage* image, FILE* out, bool palette) {
     for(int y = 0; y < image->lines;y++) {
         for(int x = 0; x < image->cols; x++) {
 			char bestcar = *cur++;
-			char color = *coul++;
-            if(lastcolor!=color) {
-                if(lastcolor!=-1)
-                    fprintf(out, "</span>");
-                if(palette) {
-                    fprintf(out, "<span class='c%d'>", color);
+            if (coul) {
+                char color = *coul++;
+                if(lastcolor!=color) {
+                    if(palette) {
+                        fprintf(out, "<span class='c%d'>", color);
+                    }
+                    else {
+                        fprintf(out, "<span style='color:rgb(%d,%d,%d)'>", image->palette->raw[color].rgbRed, image->palette->raw[color].rgbGreen, image->palette->raw[color].rgbBlue);
+                    }
+                    lastcolor = *coul;
                 }
-                else {
-                    fprintf(out, "<span style = 'color:rgb(%d,%d,%d)'>", image->palette->raw[color].rgbRed, image->palette->raw[color].rgbGreen, image->palette->raw[color].rgbBlue);
-                }
-                lastcolor = *coul;
             }
             switch(bestcar) {
                 case '"':
@@ -709,7 +864,9 @@ bool aa_output_html(AaImage* image, FILE* out, bool palette) {
         if(y+1 < image->lines)
             fprintf(out, "\n");
     }
-    fprintf(out, "</span>\n</pre></div>\n");
+    if (coul)
+        fprintf(out, "</span>\n");
+    fprintf(out, "</pre></div>\n");
     return true;
 }
 

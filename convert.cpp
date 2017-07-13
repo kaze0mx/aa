@@ -16,7 +16,7 @@ const char* video_html_post = ""
 
 int main(int argc, char** argv) {
 	if(argc < 2)  {
-		fprintf(stderr, "Usage: %s <image_path> [num_ascii_lines] [quality 0-10] [mode (i,j,h or v)]\n", argv[0]);
+		fprintf(stderr, "Usage: %s <image_path> [num_ascii_lines] [quality 0-10] [mode (i,j,h or a)]\n", argv[0]);
 		exit(1);
 	} 
 	char* filename = argv[1];
@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     if(argc >= 5) {
         mode = argv[4][0];
         if ( mode != 'i' && mode != 'a' && mode != 'j' && mode != 'h' ) {
-            fprintf(stderr, "Mode parameter must be i, j, h or v\n");
+            fprintf(stderr, "Mode parameter must be i, j, h or a\n");
             exit(1);
         }
     }
@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
     if ( mode == 'i' ) {
         // Convert single image and output to stdout
         AaImage aaimage;
-        aa_convert(image, AA_ALG_VECTOR_OR_PIXEL, &font, &aaimage, ascii_num_lines, working_height, ascii_translation, ascii_black_white_penalty_ratio, AA_PAL_NONE, prefilter_gauss_sigma, canny_min, canny_max, meanshift_r2, meanshift_d2, meanshift_n, meanshift_iterations);
+        aa_convert(image, AA_ALG_VECTOR_DST, &font, &aaimage, ascii_num_lines, working_height, ascii_translation, ascii_black_white_penalty_ratio, AA_PAL_NONE, prefilter_gauss_sigma, canny_min, canny_max, meanshift_r2, meanshift_d2, meanshift_n, meanshift_iterations);
         aa_output_ascii(&aaimage, stdout);
         aa_dispose_image(&aaimage);
         aa_dispose_bitmap(image);
@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
         }
         else if ( mode == 'h' ) {
             printf("%s", video_html_pre);
-            palette_id = AA_PAL_FREE_64;
+            palette_id = AA_PAL_NONE;
         }
         FIBITMAP* previous = NULL;
         for(int i = start, j = 0; i < num_images; i += 1+skip, j++) {
@@ -191,7 +191,7 @@ int main(int argc, char** argv) {
             FreeImage_Unload(previous);
         if ( mode == 'a' )
             printf("\x1b[?25h");
-        else if ( mode == 'v' )
+        else if ( mode == 'h' )
             printf("%s", video_html_post);
     }
     aa_dispose_font(&font);

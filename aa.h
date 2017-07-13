@@ -22,7 +22,7 @@
 #define DEFAULT_TRANSLATION 2
 #define DEFAULT_WORKING_HEIGHT 1024
 #define DEFAULT_LINES 25
-#define THRESHOLD_FONT 31
+#define THRESHOLD_FONT 128
 #define DEFAULT_PALETTEID AA_PAL_MONOCHROME
 #define DEFAULT_ALGORITHM AA_ALG_VECTOR_DST
 
@@ -35,7 +35,7 @@
 
 
 typedef enum {AA_FT_COURIER, AA_FT_LUCIDA, AA_FT_CONSOLA} AaFontId;
-typedef enum {AA_PAL_NONE, AA_PAL_MONOCHROME, AA_PAL_ANSI_16, AA_PAL_FREE_MONO, AA_PAL_FREE_16, AA_PAL_FREE_64, AA_PAL_FREE_256, AA_PAL_MAX} AaPaletteId;
+typedef enum {AA_PAL_NONE, AA_PAL_MONOCHROME, AA_PAL_ANSI_16, AA_PAL_FREE_MONO, AA_PAL_FREE_16, AA_PAL_FREE_64, AA_PAL_FREE_256, AA_PAL_PARANO, AA_PAL_MAX} AaPaletteId;
 typedef enum {AA_ALG_PIXEL_11, AA_ALG_VECTOR_DST, AA_ALG_VECTOR_DST_FILL, AA_ALG_VECTOR_11, AA_ALG_VECTOR_11_FILL, AA_ALG_VECTOR_OR_PIXEL, AA_ALG_MAX} AaAlgorithmId;
 
 #pragma pack(1)
@@ -77,6 +77,7 @@ bool aa_init_font_from_picture(const char* font_picture_path, const char* font_c
 MYEXPORT void aa_dispose_font(AaFont* res);
 
 MYEXPORT bool aa_convert(FIBITMAP* image, AaAlgorithmId algorithm, AaFont* font, AaImage* res, int lines = DEFAULT_LINES, int working_height = DEFAULT_WORKING_HEIGHT, int translation = DEFAULT_TRANSLATION, float penalty = DEFAULT_PENALTY, AaPaletteId palette_id = DEFAULT_PALETTEID, float sigma = DEFAULT_SIGMA, int canny_min = DEFAULT_CANNY_HYS_MIN, int canny_max = DEFAULT_CANNY_HYS_MAX, float meanshift_r2 = DEFAULT_MEANSHIFT_R2, float meanshift_d2 = DEFAULT_MEANSHIFT_D2, int meanshift_n = DEFAULT_MEANSHIFT_N, int meanshift_iterations = DEFAULT_MEANSHIFT_ITERATIONS);
+MYEXPORT FIBITMAP* pixel_convert(FIBITMAP* image, int final_height=64, int working_height=480, AaPaletteId palette_id = AA_PAL_FREE_16, float sigma = DEFAULT_SIGMA, float meanshift_r2 = DEFAULT_MEANSHIFT_R2, float meanshift_d2 = DEFAULT_MEANSHIFT_D2, int meanshift_n = DEFAULT_MEANSHIFT_N, int meanshift_iterations = DEFAULT_MEANSHIFT_ITERATIONS);
 MYEXPORT bool aa_dispose_image(AaImage* aaimage);
 
 MYEXPORT FIBITMAP* aa_load_bitmap_from_file(const char* path);

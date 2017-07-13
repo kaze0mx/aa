@@ -18,7 +18,7 @@ if __name__ == "__main__":
     parser.add_option('--cpu', dest='cpu', action="store", type=int, default=100, help='CPU max charge in % (defaults to 100)')
     parser.add_option('--fps', dest='fps', action="store", type=int, default=0, help='Play the video at this framerate (overwrites video\'s FPS)')
     parser.add_option('--dps', dest='dps', action="store", type=int, default=0, help='Draw this many frames per second (may sleep or skip frames)')
-    parser.add_option('--noskip', dest='noskip', action="store_true", default=False, help='Do not skip any frame (cannot guarantee anything about the framerate then)')
+    parser.add_option('--noskip', dest='noskip', action="store_true", default=False, help='Realtime mode, i.e do not skip any frame (cannot guarantee anything about the framerate then). Some video format also do not support skipping frames')
 
     (options, args) = parser.parse_args()
     if len(args) != 1:
@@ -42,20 +42,29 @@ if __name__ == "__main__":
     if params.ascii_algorithm is None:
         parser.error("Unknown algorithm %s" % (repr(options.algorithm),))
 
-    cap.set(cv2.CAP_PROP_POS_AVI_RATIO, options.stop/1000.0)
-    stop = cap.get(cv2.CAP_PROP_POS_FRAMES)
+    try:
+        cap.set(cv2.CAP_PROP_POS_AVI_RATIO, options.stop/1000.0)
+        stop = cap.get(cv2.CAP_PROP_POS_FRAMES)
+    except: 
+        stop = 0
     if stop == 0:
         if options.noskip:
             stop = None
         else:
-            raise ValueError("Could not seek in video")
+            raise ValueError("Could not seek in video, maybe realtime ? try with --noskip option")
     if stop < 0:        # webcam
         stop = None
-    cap.set(cv2.CAP_PROP_POS_AVI_RATIO, options.start/1000.0)
-    start = cap.get(cv2.CAP_PROP_POS_FRAMES)
+    if options.start:
+        cap.set(cv2.CAP_PROP_POS_AVI_RATIO, options.start/1000.0)
+        start = cap.get(cv2.CAP_PROP_POS_FRAMES)
+    else:
+        start = 0
     if start < 0:       # webcam
         start = 0
-    video_fps = options.fps or cap.get(cv2.CAP_PROP_FPS) or 24
+    try:
+        video_fps = options.fps or cap.get(cv2.CAP_PROP_FPS) or 24
+    except:
+        video_fps = 24
     if options.dps:
         frame_ideal_time = 1.0/options.dps
     else:
@@ -63,7 +72,6 @@ if __name__ == "__main__":
     cpu_rate = options.cpu/100.0 or 1.0
     cont = True
     
-    #params.font_subset = " /\\o_\"-|"
     while cont:
         nframe = start
         cont = options.loop
@@ -71,7 +79,7 @@ if __name__ == "__main__":
             time_1 = time.clock()
             if not options.noskip:
                 if not cap.set(cv2.CAP_PROP_POS_FRAMES, int(nframe)):
-                    raise ValueError("Could not seek in video")
+                    raise ValueError("Could not seek in video, maybe realtime ? try with --noskip option")
             if not cap.grab():
                 raise ValueError("Could not grab frame")
             flag, frame = cap.retrieve()
