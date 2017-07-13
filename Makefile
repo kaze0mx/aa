@@ -6,7 +6,7 @@ FreeImage=.
 
 OBJS=transform.o aa.o
 
-all: aaconvert.exe aalib.dll
+all: aaconvert.exe aapixel.exe aalib.dll
 
 %.o: %.cpp %.h 
 	$(CC) -I. -c $< -o $@
@@ -16,6 +16,9 @@ all: aaconvert.exe aalib.dll
 
 convert.o: convert.cpp video_pre.h video_post.h aa.h 
 	$(CC) -I. -c $< -o $@
+
+aapixel.exe: $(OBJS) aapixel.o
+	$(LNK) -static-libstdc++ -static-libgcc -o $@ -L$(FreeImage) $(OBJS) aapixel.o -lFreeImage 
 
 aaconvert.exe: $(OBJS) convert.o
 	$(LNK) -static-libstdc++ -static-libgcc -o $@ -L$(FreeImage) $(OBJS) convert.o -lFreeImage 
