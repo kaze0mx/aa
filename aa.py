@@ -4,7 +4,7 @@
 import os, sys, collections
 import optparse
 from ctypes import *
-import json, urllib, requests, random
+import json, requests, random
 
 class AaColor(Structure):
     _pack_ = 1
@@ -174,12 +174,13 @@ class InputImage:
 
     @staticmethod
     def from_url(url):
-        opener = urllib.urlopen(url)
-        data = opener.read()
-        ok = data and opener.getcode() != 404 and len(data) > 100 and not "<html" in data[:100]
+        r = requests.get(url)
+        r.raise_for_status()
+        data = r.content
+        ok = data and len(data) > 100 and not b"<html" in data[:100]
         if not ok:
             raise ValueError("Could not open image at url %s" % (url,))
-        return InputImage(data, source=opener.geturl())
+        return InputImage(data, source=url)
 
 
     @staticmethod
