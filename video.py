@@ -76,7 +76,7 @@ if __name__ == "__main__":
         nframe = start
         cont = options.loop
         while stop is None or nframe < stop:
-            time_1 = time.clock()
+            time_1 = time.perf_counter()
             if not options.noskip:
                 if not cap.set(cv2.CAP_PROP_POS_FRAMES, int(nframe)):
                     raise ValueError("Could not seek in video, maybe realtime ? try with --noskip option")
@@ -89,9 +89,9 @@ if __name__ == "__main__":
             if not flag:
                 raise ValueError
             inputimage = InputImage(buf)
-            #print "\x1b[1;1H"
-            print aa.convert(inputimage, lines=options.size, params=params)
-            time_elapsed = time.clock() - time_1
+            print("\x1b[1;1H")
+            print(aa.convert(inputimage, lines=options.size, params=params))
+            time_elapsed = time.perf_counter() - time_1
            
             # ensure that the video plays at a proper speed
             render_fps = 1.0/time_elapsed
@@ -109,7 +109,7 @@ if __name__ == "__main__":
             # tempo for respecting the video's fps and/or specified dps
             if to_sleep:
                 time.sleep(to_sleep)
-            time_elapsed = time.clock() - time_1
+            time_elapsed = time.perf_counter() - time_1
             real_fps = 1.0/time_elapsed
             real_charge = int(100.0*time_elapsed/(time_elapsed+to_sleep))
             # frame skip
@@ -118,6 +118,6 @@ if __name__ == "__main__":
                 to_skip = 1
             nframe += to_skip
             if options.status:
-                print "[%s] -- %3.2fDPS (%3d%%) -> %2.2fSLP+%2.2fSKP -> %3.2fFPS (%3d%%)" % (args[0], render_fps, render_charge, to_sleep, to_skip-1, real_fps, real_charge)
+                print("[%s] -- %3.2fDPS (%3d%%) -> %2.2fSLP+%2.2fSKP -> %3.2fFPS (%3d%%)" % (args[0], render_fps, render_charge, to_sleep, to_skip-1, real_fps, real_charge))
         nframe = start
 

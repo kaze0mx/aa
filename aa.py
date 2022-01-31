@@ -64,8 +64,8 @@ AA_PAL_FREE_16 = 3
 AA_PAL_FREE_64 = 4
 AA_PAL_FREE_256 = 5
 
-FONT_SUBSET = " $^+*#&\"'|~(-)=345atiopqdfghjkl<,:AZTYJL%>X@VN?.\\/_"
-FONT_TINY_SUBSET = " .o@/\\_'yT)(,-bd"
+FONT_SUBSET = " $^+*#&\"'|~(-)=345atiopqdfghjkl<,:AZTYJL%>X@VN?.\\/_".encode("ascii")
+FONT_TINY_SUBSET = " .o@/\\_'yT)(,-bd".encode("ascii")
 
 BING_KEY = "+wGKA1eii9MBZnCIsQprsBtV8HXfjHB2huCImhM6Fko"
 
@@ -77,22 +77,13 @@ class AaImage:
         self.content = content
 
 
-
-    def __unicode__(self):
-        b = []
-        for i in xrange(self.height):
-            l = self.content[self.width*i:self.width*(i+1)].rstrip()
-            if l:
-                b.append(l)
-        return u"\n".join(b)
-
     def __repr__(self):
         b = []
-        for i in xrange(self.height):
+        for i in range(self.height):
             l = self.content[self.width*i:self.width*(i+1)].rstrip()
             if l:
                 b.append(l)
-        return "\n".join(b)
+        return "\n".join([x.decode("ascii") for x in b])
         
 
 class ConvertParameters:
@@ -347,7 +338,7 @@ class AaConverter:
                 params.meanshift_r2, params.meanshift_d2, params.meanshift_n, params.meanshift_iterations):
             raise ValueError("Could not convert image")
         self.__dispose_bitmap(image)
-        r = AaImage(res.cols, res.lines, ""+res.characters)
+        r = AaImage(res.cols, res.lines, b""+res.characters)
         self.__dispose_image(byref(res))
         return r
 
@@ -403,7 +394,7 @@ if __name__ == "__main__":
     else:
         inputimage = InputImage.from_google(what)
 
-    print "Source:", inputimage.source
+    print("Source:", inputimage.source)
     inputimage.autocrop()
-    print str(aa.convert(inputimage, lines=options.size, params=params))
+    print(aa.convert(inputimage, lines=options.size, params=params))
     
